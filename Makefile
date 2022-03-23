@@ -2,7 +2,7 @@ D := # New directory name
 
 ifneq ($(D),)
 new:
-	mkdir $(D)
+	mkdir -p $(D)
 	cd $(D) && vim
 endif
 
