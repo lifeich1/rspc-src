@@ -11,8 +11,9 @@ fn main() {
     let mut out = rw::stdio_bufwriter(&stdout);
 
     let cases = scan.token::<i32>();
-    let mut a: [i64; 201001] = [0; 201001];
-    let mut b: [i64; 201001] = [0; 201001];
+    const N: usize = 201001;
+    let mut a: [i64; N] = [0; N];
+    let mut b: [i64; N] = [0; N];
     for _ in 0..cases {
         let n = scan.token::<usize>();
         for i in 0..n {
