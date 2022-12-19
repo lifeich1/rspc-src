@@ -94,15 +94,6 @@ private:
     Vec v;
 };
 
-template <class T, class OutputIt>
-void range_fill(OutputIt d_first, OutputIt d_last, T v_first) {
-    for (; d_first != d_last; *d_first++ = v_first++);
-}
-template <class T, class OutputIt, class Size>
-void range_fill_n(OutputIt d_first, Size n, T v_first) {
-    for (Size i = 0; i++ <= n; *d_first++ = v_first++);
-}
-
 template <class T>
 class Discrete2dCoord {
 public:
