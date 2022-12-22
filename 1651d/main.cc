@@ -1,3 +1,5 @@
+#include <type_traits>
+#include <tuple>
 #include <array>
 #include <functional>
 #include <iterator>
@@ -74,6 +76,7 @@ const Network01Trait::edge_type Network01Trait::EDGE_SET_VALUE = 1;
 namespace A {
 template <class T>
 struct Point2d {
+    typedef Point2d Pn;
     T x, y;
     Point2d() {}
     Point2d(T x, T y): x(x), y(y) {}
@@ -84,6 +87,8 @@ struct Point2d {
     inline bool near(const Point2d& other, T th = 1) {
         return this->mdis(other) <= th;
     }
+
+    Pn operator+ (const Pn & rhs) const { return {x + rhs.x, y + rhs.y}; }
 
     CONSTEXPR14 bool operator< (Point2d const & rhs) const {
         return this->x < rhs.x || (this->x == rhs.x && this->y < rhs.y);
@@ -113,7 +118,6 @@ namespace A {
 template <std::size_t N, std::size_t M, class Trait>
 class SparseNet {
     struct sto_type;
-    template <class T> struct iter_cv { typedef T rtype; };
 public:
     typedef typename Trait::edge_type edge_type;
 
@@ -150,7 +154,7 @@ public:
         typedef typename IterTraits::sto_type sto_type;
         typedef std::pair<std::size_t, edge_type *> value_type;
 
-        value_type const & operator*() const { return p->gp(iter_cv<value_type>()); }
+        value_type const & operator*() const { return gp<edge_type>(); }
         const value_type * operator->() const { return &p->p; }
 
         EdgeIter & operator++() { nx(); return *this; }
@@ -162,6 +166,12 @@ public:
         friend class EdgeList<IterTraits>;
 
         EdgeIter(sto_type *a, int i): i{i}, p{i >= 0 ? a + i : a}, a{a} {}
+
+        template <typename Edge, std::enable_if_t<!std::is_const_v<Edge>, int> = 0>
+        value_type const & gp() const { return p->p; }
+
+        template <typename Edge, std::enable_if_t<std::is_const_v<Edge>, int> = 0>
+        value_type const & gp() const { return p->pc; }
 
         void nx() {
             if (i >= 0) {
@@ -230,15 +240,132 @@ private:
             pc = p;
             nx_sto = nx;
         }
-
-        iter_output const & gp(iter_cv<iter_output>) const { return p; }
-        const_iter_output const & gp(iter_cv<const_iter_output>) const { return pc; }
     };
 
     std::array<sto_type, M> a;
     std::array<int, N> g;
     std::size_t a_used;
 };
+} // namespace A
+
+namespace A {
+template <class T>
+using get_cv_iterator_t =
+std::conditional_t<std::is_const_v<T>,
+    typename T::const_iterator, typename T::iterator>;
+
+template <std::size_t N, class Tuple, class FirstType, class... Types>
+struct _tuple_deref_impl {
+    typedef typename FirstType::reference FirstRef;
+    std::tuple<FirstRef, typename Types::reference...>
+        operator() (Tuple const & t) {
+        return std::tuple_cat(
+                std::make_tuple(std::ref(*std::get<std::tuple_size_v<Tuple> - N>(t))),
+                _tuple_deref_impl<N - 1, Tuple, Types...>{}(t)
+                );
+    }
+};
+template <class Tuple, class Type>
+struct _tuple_deref_impl<1, Tuple, Type> {
+    std::tuple<typename Type::reference> operator() (Tuple const & t) {
+        return {*std::get<std::tuple_size_v<Tuple> - 1>(t)};
+    }
+};
+template <std::size_t N, class... Types>
+using tuple_deref = _tuple_deref_impl<N, std::tuple<Types...>, Types...>;
+
+template <std::size_t N, class Tuple>
+struct tuple_inc {
+    void operator() (Tuple & t) {
+        ++std::get<N - 1>(t);
+        tuple_inc<N - 1, Tuple>{}(t);
+    }
+};
+template <class Tuple>
+struct tuple_inc<1, Tuple> {
+    void operator() (Tuple & t) {
+        ++std::get<0>(t);
+    }
+};
+
+template <std::size_t N, class Tuple>
+struct tuple_any_eq {
+    bool operator() (Tuple const & lhs, Tuple const & rhs) {
+        return std::get<N - 1>(lhs) == std::get<N - 1>(rhs)
+            ? true
+            : tuple_any_eq<N - 1, Tuple>{}(lhs, rhs);
+    }
+};
+template <class Tuple>
+struct tuple_any_eq<1, Tuple> {
+    bool operator() (Tuple const & lhs, Tuple const & rhs) {
+        return std::get<0>(lhs) == std::get<0>(rhs);
+    }
+};
+
+template <class... Iters>
+class ZipSList {
+public:
+    ZipSList(std::tuple<Iters...> first, std::tuple<Iters...> last)
+        : _first{first}, _last{last}
+    {}
+
+    template <class Container>
+    ZipSList<Iters..., get_cv_iterator_t<Container>> operator+ (Container & container) {
+        return {
+            std::tuple_cat(_first, std::forward_as_tuple(container.begin())),
+            std::tuple_cat(_last, std::forward_as_tuple(container.end())),
+        };
+    }
+
+    template <class InputIt>
+    ZipSList<Iters..., std::decay_t<InputIt>> c(InputIt first, InputIt last) {
+        return {
+            std::tuple_cat(_first, std::forward_as_tuple(first)),
+            std::tuple_cat(_last, std::forward_as_tuple(last)),
+        };
+    }
+
+    class ZIter {
+        typedef std::tuple<Iters...> Tuple;
+        static constexpr std::size_t tuple_siz = std::tuple_size_v<Tuple>;
+    public:
+        typedef std::tuple<typename Iters::value_type...> value_type;
+        typedef std::tuple<typename Iters::reference...> reference;
+
+        reference operator* () const { return tuple_deref<tuple_siz, Iters...>{}(_it); }
+
+        ZIter & operator++ () { tuple_inc<tuple_siz, Tuple>{}(_it); return *this; }
+        ZIter operator++ (int) { auto t = *this; tuple_inc<tuple_siz, Tuple>{}(_it); return t; }
+
+        bool operator==(ZIter const & other) const { return tuple_any_eq<tuple_siz, Tuple>{}(_it, other._it); }
+        bool operator!=(ZIter const & other) const { return !tuple_any_eq<tuple_siz, Tuple>{}(_it, other._it); }
+    private:
+        friend class ZipSList;
+
+        ZIter(Tuple const & it): _it{it} {}
+
+        Tuple _it;
+    };
+
+    ZIter begin() const { return {_first}; }
+    ZIter end() const { return {_last}; }
+
+private:
+    std::tuple<Iters...> _first;
+    std::tuple<Iters...> _last;
+};
+template <class Container>
+ZipSList<get_cv_iterator_t<Container>> zip_slist(Container & container) {
+    return {std::forward_as_tuple(container.begin()),
+        std::forward_as_tuple(container.end())};
+}
+
+template <class InputIt>
+ZipSList<std::decay_t<InputIt>> zip_slist(InputIt first, InputIt last) {
+    return {std::forward_as_tuple(first),
+        std::forward_as_tuple(last)};
+}
 } // namespace A
 
 namespace A {
@@ -345,7 +472,13 @@ private:
 };
 }
 // End placeholder for upcoming un-std algorithm, by rspc
-// Scheme by rspc: bfs constexpr14 network01trait point2d sparse_net discrete2dcoord input2dcoord
+// Scheme by rspc: bfs constexpr14 network01trait point2d sparse_net zip_slist discrete2dcoord input2dcoord
+
+#if defined(RSPC_TRACE_HINT)
+#define TRACE(...) do { __VA_ARGS__; } while (0)
+#else
+#define TRACE(...) (void)0
+#endif
 
 using namespace std;
 #define self_todo_placeholder
@@ -369,10 +502,6 @@ struct V {
     }
 };
 
-Pn operator+ (const Pn & lhs, const Pn & rhs) {
-    return {lhs.x + rhs.x, lhs.y + rhs.y};
-}
-
 struct BT {
     typedef Nw net_type;
     typedef V visitor_type;
@@ -388,6 +517,10 @@ int main() {
     vector<size_t> st;
 
     ios::sync_with_stdio(0); cin.tie(0); cout.tie(0);
+#if defined(RSPC_TRACE_BTIME)
+    TRACE(cout << "build time: " RSPC_TRACE_BTIME "\n");
+#endif
+
     cin >> n;
     I2C(cin, n) >> vs;
 
@@ -399,6 +532,7 @@ int main() {
     fill(inst.begin(), inst.begin() + n, false);
     st.reserve(n);
     auto addst = [&](luint i, Pn a) {
+        TRACE(cout << "eaf: " << i << " - " << a << endl);
         ans[i] = a;
         if (!inst[i]) {
             st.emplace_back(i);
@@ -409,20 +543,29 @@ int main() {
     addst(ix[n - 1], sx[n - 1] + Pn(1, 0));
     addst(iy[0], sy[0] + Pn(0, -1));
     addst(iy[n - 1], sy[n - 1] + Pn(0, 1));
-    for (luint i = 1; i < n; ++i) {
-        if (sx[i].x == sx[i - 1].x && sx[i].y == sx[i - 1].y + 1) {
-            nw.link(ix[i], ix[i - 1]);
+
+    auto lf = [&](
+            tuple<size_t const &, size_t const &, Pn const &, Pn const &> const & tp,
+            Pn const & dl, Pn const dr) {
+        Pn pl, pr; size_t il, ir;
+        tie(il, ir, pl, pr) = tp;
+        TRACE(cout << il << ' ' << ir << " (" << pl << ") (" << pr << ")\n");
+        if ((dl + pl) == pr) {
+            TRACE(cout << "link: " << il << ' ' << ir << endl);
+            nw.link(il, ir);
         } else {
-            addst(ix[i], sx[i] + Pn(0, -1));
-            addst(ix[i - 1], sx[i - 1] + Pn(0, 1));
+            addst(il, pl + dl);
+            addst(ir, pr + dr);
         }
-        if (sy[i].y == sy[i - 1].y && sy[i].x == sy[i - 1].x + 1) {
-            nw.link(iy[i], iy[i - 1]);
-        } else {
-            addst(iy[i], sy[i] + Pn(-1, 0));
-            addst(iy[i - 1], sy[i - 1] + Pn(1, 0));
-        }
-    }
+    };
+
+    auto l0 = (A::zip_slist(ix).c(ix.begin() + 1, ix.end())
+        + sx).c(sx.begin() + 1, sx.end());
+    for_each(l0.begin(), l0.end(), bind(lf, placeholders::_1, Pn(0, 1), Pn(0, -1)));
+
+    auto l1 = (A::zip_slist(iy).c(iy.begin() + 1, iy.end())
+        + sy).c(sy.begin() + 1, sy.end());
+    for_each(l1.begin(), l1.end(), bind(lf, placeholders::_1, Pn(1, 0), Pn(-1, 0)));
 
     bfs.start(st.begin(), st.end(), nw, n);
 
