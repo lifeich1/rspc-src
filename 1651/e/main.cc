@@ -201,7 +201,62 @@ int main() {
                 cout << i << "\t: " << ld[i] << ' ' << rd[i] << endl;
             cout << "end fixed ld rd\n");
 
-    // TODO
+    int64_t ans = 0;
+    for (int i = 0; i < n; ++i) ans += (i + 1) * (n - i);
+    ans *= n * (n + 1);
+    TRACE(cout << "pall " << ans << endl);
+
+    for (int center = 0; center < nn; ++center) {
+        int l, r, L, R, x0, x1;
+        l = r = L = R = -1;
+        x0 = ld[center], x1 = rd[center];
+        if (center >= n) L = R = center;
+        else l = r = center;
+        for (; x0 != center; x0 = ld[x0], x1 = rd[x1]) {
+            int64_t t = 0;
+            bool flag = true;
+            if (x0 < n) {
+                if (-1 != l && l <= x0 && x0 <= r) flag = false;
+                if (l <= x1 && x1 <= r) flag = false;
+                int xl = min(x0, x1);
+                int xr = max(x0, x1);
+                if (-1 == l) {
+                    t = (xr - xl) * (xr - xl - 1) / 2;
+                    t += xl * (xl + 1) / 2;
+                    t += (n - xr) * (n - xr - 1) / 2;
+                } else if (xr < l) t = (n - r) * (l - xr);
+                else if (xl > r) t = (l + 1) * (xl - r);
+                else t = (l - xl) * (xr - r);
+                t *= (L - n + 1) * (nn - R);
+                l = l != -1 ? min(l, xl) : xl;
+                r = r != -1 ? max(r, xr) : xr;
+            } else {
+                if (-1 != L && L <= x0 && x0 <= R) flag = false;
+                if (L <= x1 && x1 <= R) flag = false;
+                int xl = min(x0, x1);
+                int xr = max(x0, x1);
+                if (-1 == L) {
+                    t = (xr - xl) * (xr - xl - 1) / 2;
+                    t += (xl - n) * (xl - n + 1) / 2;
+                    t += (nn - xr) * (nn - xr - 1) / 2;
+                } else if (xr < L) t = (nn - R) * (L - xr);
+                else if (xl > R) t = (L + 1 - n) * (xl - R);
+                else t = (L - xl) * (xr - R);
+                t *= (l + 1) * (n - r);
+                L = L != -1 ? min(L, xl) : xl;
+                R = R != -1 ? max(R, xr) : xr;
+            }
+            if (!flag) t = 0;
+            TRACE(cout << 'c' << center << ' '
+                    << l << ' ' << r << ' ' << L << ' ' << R << ' '
+                    << 'x' << x0 << ' ' << x1 << ' '
+                    << t
+                    << endl);
+            ans -= t;
+        }
+    }
+
+    cout << (ans >> 1) << endl;
 
     return 0;
 }
