@@ -1,6 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <numeric>
+#include <vector>
+#include <map>
 
 // Placeholder for upcoming un-std algorithm, by rspc
 // End placeholder for upcoming un-std algorithm, by rspc
@@ -39,6 +41,7 @@ public:
 
 
 bool prim[1001001];
+array<int64_t, 2345> f0, f1;
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -72,31 +75,39 @@ int main() {
     transform(permu.begin(), permu.end(), back_inserter(permu_mul_inv),
             [&](int64_t x) { return ca.mul_inv(x); });
 
-    auto comb = [&](int a, int b) {
-        auto t = ca.mul(permu[a], permu_mul_inv[b]);
-        t = ca.mul(t, permu_mul_inv[a - b]);
-        return t;
-    };
-
     auto is_prim = [&](int const & x) { return prim[x]; };
     //int64_t apri = std::count_if(a.begin(), a.end(), is_prim);
     //int64_t apri_no = a.size() - apri;
 
-    vector<int> ua{a};
-    ua.erase(unique(ua.begin(), ua.end()));
-    int64_t apri = std::count_if(ua.begin(), ua.end(), is_prim);
-
-    int64_t ans = ca.mul(comb(apri, n), permu[n]);
-    TRACE(cout << ans << endl);
-    ans = ca.mul(ans, comb(n, apri - n));
-    TRACE(cout << ans << endl);
-    for (int i = 0, s; i < dn; ++i) {
-        for (s = 1; i + 1 < dn && a[i] == a[i + 1]; ++i, ++s);
-        //if (is_prim(a[i])) s--;
-        ans = ca.mul(ans, permu_mul_inv[s]);
-        TRACE(cout << a[i] << ' ' << ans << endl);
+    map<int,int> ps, cs;
+    for (auto x : a) {
+        if (is_prim(x)) ps[x]++;
+        else cs[x]++;
+    }
+    if (ps.size() < static_cast<size_t>(n)) {
+        cout << "0\n";
+        return 0;
     }
 
+    int64_t ans = permu[n];
+    for (auto const & [k, v] : cs) {
+        ans = ca.mul(ans, permu_mul_inv[v]);
+    }
+
+    int64_t *f = f0.data();
+    int64_t *g = f1.data();
+    fill(f, f + n + 1, 0);
+    f[0] = 1;
+    for (auto const & [k, v] : ps) {
+        swap(f, g);
+        f[0] = ca.mul(g[0], permu_mul_inv[v]);
+        for (int i = 1; i <= n; ++i) {
+            f[i] = ca.add(ca.mul(permu_mul_inv[v], g[i]),
+                    ca.mul(permu_mul_inv[v - 1], g[i - 1]));
+        }
+    }
+
+    ans = ca.mul(ans, f[n]);
     cout << ans << endl;
 
     return 0;
