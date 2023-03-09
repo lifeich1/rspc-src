@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include <iostream>
 #include <algorithm>
 #include <numeric>
@@ -15,7 +16,7 @@ using namespace std;
 #define self_todo_placeholder
 
 const int N = 808;
-int ps[N][N], mm[N][N], f[N][N], w[N];
+int64_t ps[N][N], mm[N][N], f[N][N], w[N];
 
 struct Ind {
     int x, y, tim;

@@ -16,7 +16,7 @@ using namespace std;
 
 const int N = 501001;
 pair<int,int> ai[N], bi[N];
-int ci[N];
+int ci[N], va[N], vb[N];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -31,36 +31,34 @@ int main() {
         int n; cin >> n;
         for (int i = 0; i < n; ++i) {
             cin >> ai[i].first >> bi[i].first;
+            va[i] = ai[i].first;
+            vb[i] = bi[i].first;
             ai[i].second = bi[i].second = i;
         } 
         fill(ci, ci + n, 0);
         sort(ai, ai + n);
         sort(bi, bi + n);
         int ans = max(ai[n - 1].first, bi[n - 1].first) - min(ai[0].first, bi[0].first);
-        for (int ia = n - 1, ib = n - 1; ia >= 0 && ib >= 0; ) {
-            const auto [av, ax] = ai[ia];
-            const auto [bv, bx] = bi[ib];
-            TRACE(cout << av << ' ' << ax << "  " << bv << ' ' << bx << endl);
-            if (ax != bx && ci[ax] != 2 && ci[bx] != 1) {
-                int t = abs(av - bv);
-                if (t < ans) ans = t;
+        auto chk = [&](int ia, int ib) {
+            if (1 == ci[bi[ib].second]) return;
+            int t = abs(ai[ia].first - bi[ib].first);
+            if (ans > t) ans = t;
+            TRACE(cout << '!' << ans << ' ' << ia << ' ' << ib << endl);
+        };
+        for (int ia = n - 1, ib, ibl = 0; ia >= 0; --ia) {
+            auto [av, ax] = ai[ia];
+            ci[ax] = 1;
+            ib = lower_bound(bi + ibl, bi + n - 1, make_pair(av, 0)) - bi;
+            TRACE(cout << ' ' << ib << ' ' << ibl << endl);
+            chk(ia, ib);
+            if (ib + 1 < n) chk(ia, ib + 1);
+            if (ib > 0 && ib > ibl) chk(ia, ib - 1);
+            if (ib > 1 && ib - 1 > ibl) chk(ia, ib - 2);
+
+            if (vb[ax] > bi[ibl].first) {
+                while (bi[ibl].second != ax) ++ibl;
             }
-            int t0 = -1, t1 = -1;
-            if (ia > 0 && ci[ax] != 1) { // ok false choose ia
-                t0 = abs(ai[ia - 1].first - bv);
-            }
-            if (ib > 0 && ci[bx] != 2) {
-                t1 = abs(bi[ib - 1].first - av);
-            }
-            if (t0 == -1 && t1 == -1) break;
-            TRACE(cout << ' ' << t0 << ' ' << t1 << endl);
-            if (t0 != -1 && (t0 < t1 || t1 == -1)) {
-                ci[ax] = 2;
-                --ia;
-            } else {
-                ci[bx] = 1;
-                --ib;
-            }
+            ci[ax] = 2;
         }
         cout << ans << endl;
     }

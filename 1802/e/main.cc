@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include <iostream>
 #include <algorithm>
 #include <numeric>
@@ -15,20 +16,20 @@ using namespace std;
 #define self_todo_placeholder
 
 const int N = 200101;
-int al[N], ap[N], a[N], ta[N];
+int al[N], ap[N], a[N], ta[N], taclr[N], taclr_f;
 pair<int,int> h[N];
 
 void ta_put_max(int *a, int n, int x, int y) {
     for (; x <= n; x += (x & -x)) {
-        if (a[x] < y) a[x] = y;
+        if (a[x] < y || taclr[x] != taclr_f) a[x] = y, taclr[x] = taclr_f;
         else break;
     }
 }
 
 int ta_max(int *a, int n, int x) {
-    int res = a[x];
-    for (x -= (x & -x); x > 0; x -= (x & -x)) {
-        if (res < a[x]) res = a[x];
+    int res = 0;
+    for (; x > 0; x -= (x & -x)) {
+        if (res < a[x] && taclr[x] == taclr_f) res = a[x];
     }
     return res;
 }
@@ -56,10 +57,10 @@ int main() {
                 if (x > mx) mx = x;
             }
             if (amx < mx) amx = mx;
-            h[i] = make_pair(mx, i);
+            h[i] = {mx, i};
         }
         sort(h, h + n);
-        fill(ta, ta + amx + 1, 0);
+        ++taclr_f;
         for (int i = 0; i < n; ++i) {
             auto hi = h[i].second;
             auto ed = al[hi] + ap[hi];
