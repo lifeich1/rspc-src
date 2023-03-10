@@ -55,7 +55,7 @@ int main() {
         f[1][1] = 0;
         lis.resize(0);
         lis.emplace_back(1, 1, 0);
-        int ans = -1;
+        int64_t ans = -1;
         while (lis.size()) {
             auto ind = lis.front();
             pop_heap(lis.begin(), lis.end());
