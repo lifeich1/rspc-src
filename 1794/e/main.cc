@@ -1,3 +1,8 @@
+#include <iostream>
+#include <utility>
+#include <functional>
+#include <type_traits>
+#include <tuple>
 #include <vector>
 #include <cstdint>
 #include <array>
@@ -47,11 +52,14 @@ public:
     inline type operator+ (type const & a) const { return {(a.v + v) % M}; }
     inline type operator- (type const & a) const { return {(v - a.v + M) % M}; }
     inline type operator* (type const & a) const { return {(a.v * v) % M}; }
-    inline type operator+= (type const & a) { *this = *this + a; return *this; }
-    inline type operator-= (type const & a) { *this = *this - a; return *this; }
-    inline type operator*= (type const & a) { *this = *this * a; return *this; }
+    inline type & operator+= (type const & a) { *this = *this + a; return *this; }
+    inline type & operator-= (type const & a) { *this = *this - a; return *this; }
+    inline type & operator*= (type const & a) { *this = *this * a; return *this; }
     inline type mul_inv() const { return {qpow(M - 2)}; }
     inline type qpow(T ind) const { return {qpow(v, ind)}; }
+
+    inline bool operator== (type const & a) const { return v == a.v; }
+    inline bool operator< (type const & a) const { return v < a.v; }
 };
 }
 
@@ -309,8 +317,82 @@ private:
     std::size_t a_used, g_used;
 };
 } // namespace A
+
+namespace A {
+
+struct _vary_tuple_binop__plus_t {};
+struct _vary_tuple_binop__minus_t {};
+struct _vary_tuple_binop__mulitplies_t {};
+
+template <class OP, typename... Ts, std::size_t... Is,
+         std::enable_if_t<
+             std::is_same_v<_vary_tuple_binop__plus_t, OP>, int> = 0>
+std::tuple<Ts...> __binary_op_vary_tuple(OP op,
+        std::tuple<Ts...> const & t1, std::tuple<Ts...> const & t2,
+        std::index_sequence<Is...> const &)
+{
+    return { ((std::get<Is>(t1) + std::get<Is>(t2)))... };
+}
+
+template <class OP, typename... Ts, std::size_t... Is,
+         std::enable_if_t<
+             std::is_same_v<_vary_tuple_binop__minus_t, OP>, int> = 0>
+std::tuple<Ts...> __binary_op_vary_tuple(OP op,
+        std::tuple<Ts...> const & t1, std::tuple<Ts...> const & t2,
+        std::index_sequence<Is...> const &)
+{
+    return { ((std::get<Is>(t1) - std::get<Is>(t2)))... };
+}
+
+template <class OP, typename... Ts, std::size_t... Is,
+         std::enable_if_t<
+             std::is_same_v<_vary_tuple_binop__mulitplies_t, OP>, int> = 0>
+std::tuple<Ts...> __binary_op_vary_tuple(OP op,
+        std::tuple<Ts...> const & t1, std::tuple<Ts...> const & t2,
+        std::index_sequence<Is...> const &)
+{
+    return { ((std::get<Is>(t1) * std::get<Is>(t2)))... };
+}
+
+template <class OP, typename... Ts>
+std::tuple<Ts...> _binop_vary_tuple(OP op,
+        std::tuple<Ts...> const & t1,
+        std::tuple<Ts...> const & t2
+        )
+{
+    return  __binary_op_vary_tuple(op, t1, t2, std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts>
+struct VaryTuple {
+    using type = VaryTuple<Ts...>;
+    using tuple_t = std::tuple<Ts...>;
+
+    std::tuple<Ts...> t;
+
+    VaryTuple(std::tuple<Ts...> const & t): t{t} {}
+    VaryTuple(std::tuple<Ts...> && t): t{std::move(t)} {}
+
+    type operator+ (type const & a) const { return _binop_vary_tuple(_vary_tuple_binop__plus_t{}, this->t, a.t); }
+    type operator- (type const & a) const { return _binop_vary_tuple(_vary_tuple_binop__minus_t{}, this->t, a.t); }
+    type operator* (type const & a) const { return _binop_vary_tuple(_vary_tuple_binop__mulitplies_t{}, this->t, a.t); }
+
+    type & operator+= (type const & a) { return (*this = *this + a); }
+    type & operator-= (type const & a) { return (*this = *this - a); }
+    type & operator*= (type const & a) { return (*this = *this * a); }
+
+    inline bool operator== (type const & a) const { return this->t == a.t; }
+    inline bool operator< (type const & a) const { return this->t < a.t; }
+};
+
+
+template <typename... Ts>
+auto vary_tuple(std::tuple<Ts...> && t) -> VaryTuple<Ts...> { return { t }; }
+template <typename... Ts>
+auto vary_tuple(std::tuple<Ts...> const & t) -> VaryTuple<Ts...> { return { t }; }
+}
 // End placeholder for upcoming un-std algorithm, by rspc
-// Scheme by rspc: calc_in_mod miller_rabin network01trait postorder_travel sparse_net
+// Scheme by rspc: calc_in_mod miller_rabin network01trait postorder_travel sparse_net vary_tuple
 
 #if defined(RSPC_TRACE_HINT)
 #define TRACE(...) do { __VA_ARGS__; } while (0)
@@ -352,71 +434,60 @@ int main() {
     papa.reserve(n + 1);
     pt(1, std::back_inserter(povs));
 
-    typedef A::CalcInMod<100000007> H1;
-    typedef A::CalcInMod<998244353> H2;
-    vector<H1> hs1, phs1;
-    vector<H2> hs2, phs2;
-    hs1.resize(n + 1, 0);
-    hs2.resize(n + 1, 0);
-    phs1.resize(n + 1, 0);
-    phs2.resize(n + 1, 0);
-    const int P = 3;
+    typedef A::VaryTuple<
+        A::CalcInMod<100000007>,
+        A::CalcInMod<998244353>,
+        A::CalcInMod<1073741789>
+        > H;
+    vector<H> hs, phs;
+    hs.resize(n + 1, H::tuple_t{0, 0, 0});
+    phs.resize(n + 1, H::tuple_t{0, 0, 0});
+    const H::tuple_t P = {32749, 131071, 524287};
 
-    H1 lab1 = 1; H2 lab2 = 1;
-    vector<H1> pp1;
-    vector<H2> pp2;
-    pp1.reserve(n); pp2.reserve(n);
-    pp1.emplace_back(1);
-    pp2.emplace_back(1);
-    generate_n(std::back_inserter(pp1), n - 1, [&]() { return lab1 *= P; });
-    generate_n(std::back_inserter(pp2), n - 1, [&]() { return lab2 *= P; });
-    TRACE(cout << "pp1="; for (auto p : pp1) cout << p.v << ' '; cout << endl);
-    TRACE(cout << "pp2="; for (auto p : pp2) cout << p.v << ' '; cout << endl);
-    lab1 = 0; lab2 = 0;
+    H lab = H::tuple_t{1, 1, 1};
+    vector<H> pp;
+    pp.reserve(n);
+    pp.emplace_back(H::tuple_t{1, 1, 1});
+    generate_n(std::back_inserter(pp), n - 1, [&]() { return lab *= P; });
+    TRACE(cout << "pp=";
+            for (auto p : pp) {
+                auto [v1, v2, v3] = p.t;
+                cout << v1.v << ' ' << v2.v << ' ' << v3.v << "  ";} cout << endl);
+    lab = H::tuple_t{0, 0, 0};
     for (auto c : labels) {
-        lab1 += pp1[c];
-        lab2 += pp2[c];
+        lab += pp[c];
     }
-    set<pair<int64_t, int64_t>> labset;
+    set<H> labset;
     for (int i = 0; i < n; ++i) {
-        auto h1 = lab1 + pp1[i];
-        auto h2 = lab2 + pp2[i];
-        labset.emplace(h1.v, h2.v);
+        auto h = lab + pp[i];
+        labset.emplace(std::move(h));
     }
-    TRACE(cout << "labset="; for (auto const & [x, y] : labset) cout << '(' << x << ',' << y << ") "; cout << endl);
+    TRACE(cout << "labset=";
+            for (auto const & h : labset) {
+              auto [x, y, z] = h.t;
+              cout << '(' << x.v << ',' << y.v << ',' << z.v << ") "; } cout << endl);
 
     std::vector<int> ans;
     for (int i = 0; i < n; ++i) {
         auto x = povs[i];
         auto pa = papa[x];
-        auto & h1 = hs1[x];
-        auto & h2 = hs2[x];
-        h1 += 1, h2 += 1;
+        auto & h = hs[x];
+        h += H::tuple_t{1, 1, 1};
         if (pa != x) {
-            hs1[pa] += h1 * P;
-            hs2[pa] += h2 * P;
+            hs[pa] += h * P;
         }
     }
     for (int i = n - 1; i >= 0; --i) {
         auto x = povs[i];
         auto pa = papa[x];
-        auto & ph1 = phs1[x];
-        auto & ph2 = phs2[x];
-        auto const & h1 = hs1[x];
-        auto const & h2 = hs2[x];
+        auto & ph = phs[x];
+        auto const & h = hs[x];
         if (pa != x) {
-            TRACE(cout << ". " << hs1[pa].v << ' '
-                    << h1.v << ' ' << phs1[pa].v << "; "
-                    << ((h1 * P)).v << ' '
-                    << (hs1[pa] - (h1 * P)).v << ' '
-                    << endl);
-            ph1 = ((hs1[pa] - (h1 * P)) + phs1[pa]) * P;
-            ph2 = ((hs2[pa] - (h2 * P)) + phs2[pa]) * P;
+            ph = ((hs[pa] - (h * P)) + phs[pa]) * P;
         }
         TRACE(cout << "node " << x << " pa[" << pa
-                << "  " << h1.v << ' ' << ph1.v
-                << "  " << h2.v << ' ' << ph2.v << endl);
-        if (labset.find(make_pair((h1 + ph1).v, (h2 + ph2).v)) != labset.end()) {
+                << "  " << get<0>(h.t).v << ' ' << get<0>(ph.t).v << endl);
+        if (labset.find(h + ph) != labset.end()) {
             ans.emplace_back(x);
         }
     }
