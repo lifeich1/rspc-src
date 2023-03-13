@@ -286,7 +286,7 @@ int main() {
                 if (!floyd.reach(1, x) || !floyd.reach(x, y)) continue;
                 auto [c, r] = cal(x, y, fr[j]);
                 c += f[j];
-                if (c < f[i]) f[i] = c, fr[i] = r;
+                if (c < f[i] || (c == f[i] && r > fr[i])) f[i] = c, fr[i] = r;
             }
             if (floyd.reach(y, n)) {
                 auto [c, r] = cal(y, n, fr[i]);
