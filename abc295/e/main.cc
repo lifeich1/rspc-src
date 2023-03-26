@@ -68,7 +68,7 @@ using namespace std;
 typedef A::CalcInMod<998244353> CM;
 const int N9 = 4020;
 const int N = 2000;
-CM pa[N9], invpa[N9];
+CM pa[N9], invpa[N9], tp[N9], tip[N9];
 int c[N9];
 
 int main() {
@@ -89,33 +89,36 @@ int main() {
     cin >> n >> m >> K;
     for (int i = 0, x; i < n; ++i) { cin >> x; c[x]++; }
     for (int i = 1; i <= m; ++i) c[i] += c[i - 1];
-    CM ansp = 0, ansq = 0;
+    CM ans = 0;
 
     auto Cf = [&](int m, int n) { return pa[n] * invpa[m] * invpa[n - m]; };
     auto Rf = [&](int m, int n) { return (n == m && m == 0) ? 1 : Cf(m, n + m - 1); };
     TRACELN(cout << "--" << Rf(0, 0).v);
 
+    auto vm = CM{m}.mul_inv();
     for (int a = 1; a <= m; ++a) {
         int ml = c[a - 1] - c[0]; // already fill
-        int mr = c[m] - c[a];
-        if (ml >= K || K + mr > n) continue;
-        int me = c[a] - c[a - 1];
-        for (int i = 0; i <= me; ++i) { // how many eq a filled in left
-            int l = K - 1 - ml - i; // to fill <=a in left
-            int r = (n - K) - mr - (me - i); // , or >=a in right side
-            TRACELN(cout << '+' << a << '/' << i << ' ' << l << ' ' << r << ' ' <<ml <<' '<<mr << "  " << Rf(l, a).v << ',' << Rf(r, m - a + 1).v);
-            if (1 == a && l > 0) continue;
-            if (m == a && r > 0) continue;
-            CM t = CM(a).qpow(l) * CM(m - a + 1).qpow(r) * Cf(l, n - c[n]);
-            ansp += t * a;
-            ansq += t;
-            TRACELN(cout << '.' << a << '/' << i << ' ' << t.v);
+        int mr = c[m] - c[a - 1];
+        if (ml >= K || K + mr > n) {
+            if (K + mr > n) {
+                ans += 1; // filled is >= a
+                TRACELN(cout << ':' << a << " 1");
+            }
+            continue;
         }
+        auto p = vm * (m - a + 1);
+        auto ip = vm * (a - 1);
+        tip[0] = tp[0] = 1;
+        for (int i = 0; i < c[0]; ++i)
+            tp[i + 1] = tp[i] * p, tip[i + 1] = tip[i] * ip;
+        for (int i = n - K - mr + 1; i <= c[0]; ++i) {
+            ans += tp[i] * tip[c[0] - i] * Cf(i, c[0]);
+        }
+        TRACELN(cout << ',' << a << ' ' << (n - K - mr + 1)
+                << ' ' << ans.v);
     }
 
-    TRACELN(cout << ':' << ansp.v << '/' << ansq.v);
-    ansp *= ansq.mul_inv();
-    cout << ansp.v << endl;
+    cout << ans.v << endl;
 
     return 0;
 }
