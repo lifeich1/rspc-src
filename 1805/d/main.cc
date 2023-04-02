@@ -1,0 +1,67 @@
+#include <bits/stdc++.h>
+
+// Placeholder for upcoming un-std algorithm, by rspc
+// End placeholder for upcoming un-std algorithm, by rspc
+// Scheme by rspc:
+
+#if defined(RSPC_TRACE_HINT)
+#define TRACE(...) do { __VA_ARGS__; } while (0)
+#else
+#define TRACE(...) (void)0
+#endif
+#define TRACELN(...) TRACE(__VA_ARGS__; cout << endl)
+#define TRACE_VEC(VEC, ITEM, ...) TRACE(cout << #VEC << "= "; for_each((VEC).begin(), (VEC).end(), [&](ITEM _i) { __VA_ARGS__; }))
+using namespace std;
+#define self_todo_placeholder
+
+const int N = 301001;
+vector<int> e[N];
+int u0[N], u[N], d[N];
+
+void dfs(int x, int* u) {
+    for (auto y : e[x]) {
+        if (0 == u[y]) u[y] = u[x] + 1, dfs(y, u);
+    }
+}
+
+int main() {
+#if defined(RSPC_TRACE_BTIME)
+    TRACE(cout << "build time: " RSPC_TRACE_BTIME "\n");
+#else
+    ios::sync_with_stdio(0);
+    cin.tie(0), cout.tie(0);
+#endif
+
+    int n; cin >> n;
+    for (int i = 1, u, v; i < n; ++i) {
+        cin >> u >> v;
+        e[u].push_back(v);
+        e[v] .push_back (u);
+    }
+    u0[1] = 1;
+    dfs(1, u0);
+    auto ed = max_element(u0 + 1, u0 + 1 + n) - u0;
+    TRACELN(cout << ed);
+    dfs(ed, u);
+    auto L = *max_element(u + 1, u + 1 + n);
+    fill(u0, u0 + n + 1, 0);
+    int p1, p2;
+    p1 = p2 = find(u + 1, u + 1 + n, L >> 1) - u;
+    if (L & 1) {
+        p2 = find(u + 1, u + 1 + n, (L + 1) >> 1) - u;
+    }
+    u0[p1] = u0[p2] = 1;
+    dfs(p1, u0); dfs(p2, u0);
+
+    for_each(u0 + 1, u0 + 1 + n, [&](int x) { ++d[x + (L + 1) / 2]; });
+    TRACELN(copy_n(u0 + 1, n, std::ostream_iterator<int> (cout, " ")));
+    TRACELN(copy_n(d + 1, n, std::ostream_iterator<int> (cout, " ")));
+    //inclusive_scan(d + 1, d + L + 1, std::ostream_iterator<int> (cout, " "), plus{}, 1);
+    ++d[1];
+    partial_sum(d + 1, d + L + 1, std::ostream_iterator<int> (cout, " "));
+    fill_n(std::ostream_iterator<int> (cout, " "), n - L, n);
+    cout << endl;
+
+    return 0;
+}
+
