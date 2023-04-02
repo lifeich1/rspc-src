@@ -15,8 +15,8 @@ using namespace std;
 #define self_todo_placeholder
 
 const int N = 401001;
-int xs[N], ys[N], en, a[N], f[N], ls[N];
-vector<int> ee[N];
+int a[N], f[N], ls[N];
+set<pair<int,int>> se[N];
 
 int & fa(int u) {
     if (f[u] == -1) f[u] = u;
@@ -24,6 +24,11 @@ int & fa(int u) {
     auto & r = fa(f[u]);
     f[u] = r;
     return r;
+}
+void sjoin(int u, int v) {
+    if (ls[fa(u)] < ls[fa(v)]) swap(u, v);
+    ls[fa(u)] += ls[fa(v)];
+    fa(v) = fa(u);
 }
 
 int main() {
@@ -35,53 +40,45 @@ int main() {
 #endif
 
     int tt; cin >> tt; while (tt--) {
-        en = 0;
         int n, m;
         cin >> n >> m;
         copy_n(std::istream_iterator<int> (cin), n, a);
         fill(f, f + n, -1);
-        fill(ls, ls + n, 0);
-        for (int i = 0; i < n; ++i) ee[i].clear();
+        fill(ls, ls + n, 1);
+        for (int i = 0; i < n; ++i) se[i].clear();
+ TRACE(if (tt == 438)        TRACELN(cout << n<<' '<<m<<endl;copy_n(a, n, std::ostream_iterator<int> (cout," "))););
         for (int i = 0, u, v; i < m; ++i) {
-            cin >> u >> v; u--, v--;
-            xs[i] = u; ys[i] = v;
-            ee[u].push_back(i);
-            ee[v].push_back(i);
+            cin >> u >> v;
+            TRACE(if (tt == 438) TRACELN(if(tt==438)cout <<u<<' '<<v););
+            u--, v--;
+            se[u].emplace(a[v], v);
+            se[v].emplace(a[u], u);
         }
         set<pair<int,int>> ss;
-        auto add = [&](int u, int v) {
-            if(ls[v] == 0) {
-                for (auto e : ee[v]) {
-                    ss.emplace(max(a[xs[e]], a[ys[e]]), e);
-                }
-                ++ls[v];
-            } else v = fa(v);
-            TRACELN(cout << "  " << u << ' ' << v << ' ' << ls[u] << ' ' << ls[v]);
-            if (ls[v] > ls[u]) swap(u, v);
-            ls[u] += ls[v];
-            fa(v) = fa(u);
-            TRACELN(cout << '=' << u << ' ' << v << "  " << ls[u]<< ' '<<f[fa(v)]);
-        };
+        ss.clear();
         for (int i = 0; i < n; ++i) {
-            if (0 == a[i]) {
-                for (auto e : ee[i]) {
-                    ss.emplace(max(a[xs[e]], a[ys[e]]), e);
+            if (a[i] != 0) continue;
+            if (ls[fa(i)] > 1) continue;
+            ss.swap(se[fa(i)]);
+            while (ss.size()) {
+                auto [ta, y] = *ss.begin();
+                ss.erase(ss.begin());
+                TRACELN(cout<<'.'<<y<<' '<<ta<<' '<<i);
+                if (fa(y) == fa(i)) continue;
+                TRACELN(cout<<':'<<y<<' '<<ta<<' '<<i);
+                if (ls[fa(i)] < ta) {
+                    ss.emplace(ta, y);
+                    break;
                 }
-                ls[i] = 1;
+                ss.insert(se[fa(y)].begin(), se[fa(y)].end());
+                TRACE(cout<<'='<<fa(i)<<' '<<fa(y)<<' ');
+                sjoin(i, y);
+                TRACELN(cout<<ls[fa(i)]);
             }
-            f[i] = i;
+            se[fa(i)].swap(ss);
         }
-        while (ss.size()) {
-            auto [ma, e] = *ss.begin();
-            ss.erase(ss.begin());
-            int u = xs[e], v = ys[e];
-            TRACELN(cout << ':' << u << ' ' << v << ','<<fa(u)<<' ' <<fa(v));
-            if (fa(u) == fa(v)) continue;
-            if (0 == ls[u]) swap(u, v);
-            if (a[v] > ls[fa(u)]) continue;
-            add(fa(u), v);
-        }
-        cout << (*max_element(ls, ls + n) == n ? "YES\n" : "NO\n");
+        TRACE(cout << tt << ' ');
+        cout << (*max_element(ls, ls + n) == n ? "YES\n": "NO\n");
     }
     return 0;
 }
