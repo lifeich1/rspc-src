@@ -78,7 +78,7 @@ int main() {
             TRACELN(cout << ':' << u << ' ' << v << ','<<fa(u)<<' ' <<fa(v));
             if (fa(u) == fa(v)) continue;
             if (0 == ls[u]) swap(u, v);
-            if (a[v] > ls[fa(u)]) break;
+            if (a[v] > ls[fa(u)]) continue;
             add(fa(u), v);
         }
         cout << (*max_element(ls, ls + n) == n ? "YES\n" : "NO\n");

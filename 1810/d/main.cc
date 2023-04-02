@@ -48,6 +48,7 @@ int main() {
                 TRACE(cout << '(' << l << ' ' << r << ')');
             } else {
                 cin >> a >> b;
+                if (r < 0) { cout << "-1\n"; continue; }
                 const auto t = day(l, a, b);
                 const auto t1 = day(r, a, b);
                 cout << (t == t1 ? t : -1) << ' ';
