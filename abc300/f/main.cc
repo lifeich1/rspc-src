@@ -16,7 +16,7 @@ using namespace std;
 
 const int N = 301001;
 char s[N];
-int h[N*3];
+int h[N];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -29,24 +29,24 @@ int main() {
     int n, m;
     int64_t k;
     cin >> n >> m >> k >> s;
-    int n0 = n;
-    for (int i = 1; i <= n; ++i)
-        h[i+n+n]=h[i] = h[i+n] = (s[i-1]=='x'?1:0);
-    if (m==2) n*=2, m-=2;
-    else if (m>2) n *= 3,m-=3;
-    for (int i = 1; i <= n; ++i)
-        h[i]+= h[i-1];
-    int64_t a0 = n0;
-    auto t = max(int64_t(0), k / h[n0] -1);
-    a0 *= t;
-    k -= h[n0]*t;
-    int ans = 0;
-    for (int i = 0, j = 0; i < n; ++i) {
-        while (j<n&&h[j+1]-h[i]<=k)++j;
-        ans = max(ans, j-i);
+    for (int i = 1; i <= n; ++i) h[i] = (s[i-1]=='x'?1:0);
+    for (int i = 1; i <= n; ++i) h[i]+= h[i-1];
+    auto cnt = [&](int64_t r) -> int64_t {
+        return h[n] * (r / n) + h[r % n];
+    };
+    int64_t ans = 0, rr = m, j = 1;
+    rr *= n;
+    for (int i = 0; i < n; ++i) {
+        int64_t target = h[i] + k, l, r, t;
+        for (l = j, r = rr; l < r; ) {
+            t = (l + r + 1) >> 1;
+            if (cnt(t) <= target) l = t;
+            else r = t - 1;
+        }
+        j = l;
+        ans = max(ans, j - i);
     }
-    TRACELN(cout<< a0<<' '<<ans<<' '<<t);
-    cout << a0+ans <<endl;
+    cout << ans <<endl;
     return 0;
 }
 
