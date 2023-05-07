@@ -20,35 +20,17 @@ int r[555][N];
 int64_t f[N];
 int n, m; 
 
-struct no {
-    map<int,int> l;
-    int64_t a;
-};
-vector<no> nos;
+uint64_t bs[2][N][N/64+1];
 
-int64_t travel(int rt, int th, int dep=1) {
-    if (dep == m) {
-        return nos[rt].a;
-    }
-    int64_t ret = 0;
-    for (auto [k, v] :nos[rt].l) {
-        if (k >= r[dep][th]) return ret;
-        ret = max(travel(v, th, dep + 1), ret);
-    }
-    return ret;
+void se(uint64_t *b, int i) {
+    uint64_t t=1;
+    t<<=i%64;
+    b[i/64]|=t;
 }
-
-void insert(int rt, int th, int dep=1) {
-    if (dep == m) nos[rt].a = max(nos[rt].a, f[th]);
-    else {
-        auto &l = nos[rt].l;
-        auto &p = l[r[dep][th]];
-        if (p == 0) {
-            p = nos.size();
-            nos.emplace_back();
-        }
-        insert(p, th, dep+1);
-    }
+bool ge(uint64_t *b, int i) {
+    uint64_t t=1;
+    t<<=i%64;
+    return (b[i/64]&t)>0;
 }
 
 int main() {
@@ -60,17 +42,36 @@ int main() {
 #endif
 
     cin >> m >> n;
-    nos.reserve(n * m);
     copy_n(std::istream_iterator<int> (cin), n, P);
     for (int i = 0; i < m; ++i) copy_n(std::istream_iterator<int> (cin), n, r[i]);
     for (int i = 0; i < n; ++i) h[i] = i;
-    sort(h, h + n, [&](int a, int b) {
-                return r[0][a] < r[0][b];
-            });
-    nos.resize(1);
-    for (int i = 0, j = 0; i < n; ++i) {
-        while (r[0][h[j]] < r[0][h[i]]) insert(0, h[j++]);
-        f[h[i]] = travel(0, h[i]) + P[h[i]];
+    auto n_ = n/64+1;
+    for (int k = 0; k < m; ++k) {
+        int g = k>0?1:0;
+        sort(h, h + n, [&](int a, int b) {
+                return r[k][a] < r[k][b];
+                });
+        for (int i = 0, j = 0; i < n; ++i) {
+            auto *b = bs[g][h[i]];
+            if (i > 0) {
+                auto *b0 = bs[g][h[i - 1]];
+                copy_n(b0, n_, b);
+            } else {
+                fill(b, b+n_, 0);
+            }
+            if (r[k][h[i]] == r[k][h[j]]) continue;
+            for (; j < i; ++j) {
+                se(b, h[j]);
+            }
+        }
+        if (g) 
+            for (int i = 0; i<n;++i) transform(bs[g][i], bs[g][i] + n_, bs[0][i], bs[0][i], bit_and{});
+    }
+    for (int i = 0; i < n;++i) {
+        auto *b = bs[0][h[i]];
+        for (int j = 0; j < i; ++j)
+            if (ge(b, h[j])) f[i] = max(f[i], f[j]);
+        f[i] += P[h[i]];
     }
     cout << *max_element(f, f + n) << endl;
     return 0;
