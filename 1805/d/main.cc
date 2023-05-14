@@ -16,7 +16,7 @@ using namespace std;
 
 const int N = 301001;
 vector<int> e[N];
-int u0[N], u[N], d[N];
+int u0[N], u[N], d[N], f[N], sz[N], h[N];
 
 void dfs(int x, int* u) {
     for (auto y : e[x]) {
@@ -42,25 +42,53 @@ int main() {
     dfs(1, u0);
     auto ed = max_element(u0 + 1, u0 + 1 + n) - u0;
     TRACELN(cout << ed);
+    u[ed] = 1;
     dfs(ed, u);
     auto L = *max_element(u + 1, u + 1 + n);
     fill(u0, u0 + n + 1, 0);
-    int p1, p2;
-    p1 = p2 = find(u + 1, u + 1 + n, L >> 1) - u;
-    if (L & 1) {
-        p2 = find(u + 1, u + 1 + n, (L + 1) >> 1) - u;
-    }
-    u0[p1] = u0[p2] = 1;
-    dfs(p1, u0); dfs(p2, u0);
+    auto ed2 = max_element(u + 1, u + 1 + n) - u;
+    u0[ed2] = 1;
+    dfs(ed2, u0);
 
-    for_each(u0 + 1, u0 + 1 + n, [&](int x) { ++d[x + (L + 1) / 2]; });
-    TRACELN(copy_n(u0 + 1, n, std::ostream_iterator<int> (cout, " ")));
-    TRACELN(copy_n(d + 1, n, std::ostream_iterator<int> (cout, " ")));
-    //inclusive_scan(d + 1, d + L + 1, std::ostream_iterator<int> (cout, " "), plus{}, 1);
-    ++d[1];
-    partial_sum(d + 1, d + L + 1, std::ostream_iterator<int> (cout, " "));
-    fill_n(std::ostream_iterator<int> (cout, " "), n - L, n);
-    cout << endl;
+    fill(f, f + n, -1);
+#if 0
+    auto fa = [&]( int x) -> int& {
+        if (f[x] == -1) f[x] = x, sz[x] = 1;
+        if (f[x] == x) return f[x];
+        f[x] = fa(x);
+        return fa(x);
+    };
+    auto uni = [&]( int x, int y) {
+        x = fa(x), y = fa(y);
+        if (sz[x] < sz[y]) swap(x, y);
+        sz[x]+= sz[y];
+        fa(y) = x;
+    };
+#endif
+
+    transform(u0+1, u0 + n+1, u+1, d+1, [&]( int d1, int d2) {return max(d1, d2);});
+    for (int i = 0; i < n; ++i) h[i] = i+1;
+    sort(h, h + n, [&]( int x, int y) {
+                return d[x] < d[y];
+            });
+    TRACELN(cout<<ed<<' '<<ed2);
+    TRACELN(copy_n(d+1, n, std::ostream_iterator<int> (cout, " ")));
+
+    vector<int> ans;
+    ans.resize(n);
+        int a = n;
+    for (int i = n, t = n-1; i > 0; --i) {
+        while (t>= 0&& d[h[t]]>i) {
+            auto x = h[t];
+            if (x != ed)
+            {
+                --a;
+            }--t;
+        }
+        ans[i-1] = a;
+    }
+    copy(ans.begin(), ans.end(), std::ostream_iterator<int> (cout," "));
+    cout<<endl;
 
     return 0;
 }
