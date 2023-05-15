@@ -53,12 +53,9 @@ public:
 using namespace std;
 #define self_todo_placeholder
 
-typedef A::CalcInMod<998244353> Cm;
 
-const int N = 10001001;
-int a[N];
-Cm sa[N];
-
+typedef A::CalcInMod<998244353> Cm
+;
 int main() {
 #if defined(RSPC_TRACE_BTIME)
     TRACE(cout << "build time: " RSPC_TRACE_BTIME "\n");
@@ -67,15 +64,28 @@ int main() {
     cin.tie(0), cout.tie(0);
 #endif
 
-    int64_t n, a0 , x, y, m, k;
-    cin >> n >> a0 >> x >> y >> m >> k;
-    a[1] = a0; sa[1] = a0;
-    for (int i = 2; i <= n; ++i) a[i] = (int64_t(a[i-1])*x+y)%m, sa[i] = sa[i-1]+a[i];
-    Cm  nc = 0, sc = 0, lb = 0;
-    int64_t ans = 0;
-    for (int i = 1; i <= n; ++i) {
-        if ()
+    int n, a1, x, y, m, k;
+    cin>>n>>a1>>x>>y>>m>>k;
+    int64_t ai = a1;
+    Cm sa=ai;
+    vector<Cm> f, f0;
+    f.emplace_back(a1);
+    f.emplace_back(a1);
+    f.resize(k+1, Cm{0});
+    f0.resize(k+1);
+    int64_t c = f[k].v;
+    //cout<<f[k].v<<endl;
+    for(int i=2;i<=n;++i){
+        ai=(ai*x+y)%m;sa += ai; 
+        f0.swap(f);
+        f[0]=sa;
+        f[1]=f0[1]+sa;
+        for (int j = 2; j <= k; ++j)
+            f[j]=f0[j]+f0[j-1];
+        //cout<<f[k].v<<endl;
+        c ^= f[k].v*i;
     }
+    cout<<c<<endl;
     return 0;
 }
-
+ 
