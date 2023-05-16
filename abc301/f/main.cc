@@ -38,6 +38,8 @@ public:
     inline type qpow(T ind) const { return {qpow(v, ind)}; }
     inline bool operator== (type const & a) const { return v == a.v; }
     inline bool operator< (type const & a) const { return v < a.v; }
+    template<class Stream>
+        Stream& operator<< (Stream & stm) const { stm << v; return stm; }
 };
 }
 // End placeholder for upcoming un-std algorithm, by rspc
@@ -56,7 +58,7 @@ using namespace std;
 const int N = 301001;
 char s[N];
 typedef A::CalcInMod<998244353> Cm;
-Cm 
+Cm suflo[N];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -68,27 +70,48 @@ int main() {
 
     cin >> s;
     int n = strlen(s);
-    vector<Cm> f0, f;
-    f0.resize(28);
-    f.resize(28);
-    f[27] = 1;
-    for (int i = 0, j=n-1; i <j; ++i,--j) {
-        auto &x = s[i], &y = s[j];
-        x ^=y;y^=x;x^=y;
-    }
-    for_each(s, s+n, [&]( char c) {
-            swap(f0, f);fill(f.begin(), f.end(), 0);
-            if (c == '?') {
-            } else {
-                if (isupper(c)) {
-                 
-                 f[27] += f0[27];
-                } else {
-                 f[26] += f0[27];
-                 for (int i = 0; i < 27; ++i)  f[i] += f0[i];
-                }
+    array<Cm, 29> f1, f2, dv; // no A, A distinct, AA no a, AAa 
+    Cm *f = f1.data(), *f0 = f2.data();
+    f[0] = 1;
+    dv[1] = 1;
+    for (int i = 2; i <= 26; ++i) dv[i] = Cm{i}.mul_inv();
+    set<int> A;
+    for (int i = 0; i < n; ++i) {
+        swap(f, f0);
+        if (s[i] == '?') {
+            transform(f0, f0 + 29, f, [](const auto &v) { return v * 26; }); // 0-26, 28: append a; 27: append A
+            f[28] += f0[27] * 26; // AA . a
+            for (int k = 0; k <= 26 - A.size(); ++k) {
+                int rk = k + A.size();
+                f[27] += f0[k] * rk;
+                f[k+1] += f0[k] * (26 - rk);
             }
-            });
+        } else if (isupper(s[i])) {
+            bool dis = A.insert(s[i]).second;
+            TRACELN(cout<<'A');
+            f[28] = 0; // DDoS
+            if (dis) {
+                f[27] = f0[27];
+                f[0] = 0;
+                fill(f + 1, f + 27, Cm{0});
+                int dd = 26 - A.size() + 1;
+                for (int k = 0; k <= dd; ++k) {
+                    f[27] += f0[k] * k * dv[dd];
+                    f[k] += f0[k] * (dd - k) * dv[dd];
+                }
+            } else {
+                f[27] = accumulate(f0, f0 + 28, Cm{0});
+                fill(f, f + 27, Cm{0});
+            }
+        } else {
+            f[28] = f0[28] + f0[27];
+            f[27] = 0;
+            copy_n(f0, 27, f);
+        }
+        TRACELN(for (int q = 0; q < 29; ++q) cout << f[q].v << ' ';);
+    }
+    TRACELN(for (int i = 0; i < 29; ++i) cout << f[i].v << ' ';);
+    cout << accumulate(f, f + 29, Cm{0}).v << endl;
     return 0;
 }
 
