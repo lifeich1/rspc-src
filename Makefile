@@ -6,6 +6,10 @@ new:
 	cd $(D) && vim
 endif
 
+.PHONY: lc
+lc:
+	nc -l 13013
+
 clean:
 	rm .gitignore
 	git clean -if
