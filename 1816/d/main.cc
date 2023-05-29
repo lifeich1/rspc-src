@@ -18,16 +18,60 @@ const int N = 1010;
 int n;
 
 #if defined(RSPC_TRACE_HINT)
-int a[N];
+int a[N], c[N][N];
+#endif
+
 void lclinit() {
+#if defined(RSPC_TRACE_HINT)
     a[1] = 1;
     for (int i = 2; i <=n;++i) {
         int t = (rand() % n) + 1;
         a[i ] = i;
         if (t < i) swap(a[i], a[t]);
     }
-}
+    for (int i = 1; i <= n;++i)
+        fill(c[i], c[i]+n+1,0);
+#else
+        cin >> n;
 #endif
+}
+
+void op1(int x) {
+#if defined(RSPC_TRACE_HINT)
+    for (int i = 1; i <= n; ++i)
+    {
+        auto j = x - i;
+        if (j >= 1 && j <= n) c[i][j] = 1;
+    }
+#else
+    cout<<"+ " << x<<endl;cout.flush();
+#endif
+}
+
+int op2(int x, int y) {
+#if defined(RSPC_TRACE_HINT)
+    map<int,int> f;
+    f[x] = 0;
+    vector<int> l = {x};
+    for (int i = 0; i < l.size(); ++i) {
+        int p = l[i];
+        int v = f[p]+1;
+        for (int t = 1; t <= n; ++t) if (c[p][t]) {
+            if (t == y) return v;
+            if (f.find(t) != f.end()) continue;
+            f[t] = v;
+            l.emplace_back(t);
+        }
+    }
+    return -1;
+#else
+    cout<<"? " << x<<' '<<y<<endl;cout.flush();
+    int r;
+    cin >> r;
+    if (r == -2) exit(0);
+    return r;
+#endif
+}
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -38,11 +82,8 @@ int main() {
 #endif
 
     int tt; cin >> tt; while (tt--) {
-#if defined(RSPC_TRACE_HINT)
         lclinit();
-#else
-        cin >> n;
-#endif
+        // TODO
     }
     return 0;
 }
