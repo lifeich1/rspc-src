@@ -31,7 +31,7 @@ int main() {
         int n,m,K;  cin >> n>>m>>K;
         fill(f,f+n+1, 0);
         for(int i = 0; i <= n; ++i) e[i].clear();
-        copy_n(std::istream_iterator<int>(std::cin),n,p);
+        copy_n(std::istream_iterator<int>(std::cin),K,p);
         for (int i = 0; i < K; ++i) {
             int d; cin >> d;
             f[p[i]] = max(f[p[i]], d);
