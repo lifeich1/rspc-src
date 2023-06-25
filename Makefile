@@ -28,4 +28,4 @@ show_ddir:
 $(adir): f = $(patsubst _archive/%,%,$@)
 $(adir):
 	git mv $(f) $@
-	git commit -a -m ":truck: _archive $(f), close " -e
+	git commit -a -m ":truck: _archive $(f), close #" -e
