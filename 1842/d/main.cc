@@ -44,9 +44,9 @@ int main() {
     if (c[1][n] < 0) {
         cout<< "inf\n";return 0;
     }
-    vector<int64_t> d = {c[1][n]};
-    for (int i = 2; i < n; ++i)
-        if (c[1][i] > 0 && c[1][i] < c[1][n]) d.emplace_back(c[1][i]);
+    vector<int64_t> d;
+    for (int i = 2; i <= n; ++i)
+        if (c[1][i] > 0 && c[1][i] <= c[1][n]) d.emplace_back(c[1][i]);
     sort(d.begin(), d.end());
     d.erase(unique(d.begin(),d.end()),d.end());
     cout<< c[1][n] << ' '<<d.size()<<endl;
