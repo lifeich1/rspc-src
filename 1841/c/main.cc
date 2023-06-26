@@ -26,7 +26,7 @@ int main() {
 
     string s;
     int64_t d[] = {1, 10, 100, 1000, 10000};
-    const int64_t MI = -d[4]  * 2010010;
+    const int64_t MI = -d[4]  * 5010010;
     int tt; cin >> tt; while (tt--) {
         cin >> s;
         int64_t *f = g[0], *f0 = g[1];
@@ -39,7 +39,7 @@ int main() {
             int v = s[i] - 'A';
             f[max(v, la)] = f0[la] + d[v] * (v < la ? -1 : 1);
             for (int k = 0; k < 5; ++k) {
-                if (f0[k+5] < 0) continue;
+                if (f0[k+5] == MI) continue;
                 f[max(v, k)+5] = max(f[max(v,k)+5],f0[k+5] + d[v] * (v < k ? -1 : 1));
             }
             for (v = 0; v < 5; ++v) {
