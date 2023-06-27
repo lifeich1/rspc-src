@@ -57,6 +57,79 @@ typedef A::CalcInMod<1000000007> Cm;
 const int N = 501001;
 int ip[N],hz[N], pp[N];
 Cm f[N],rhz[N];
+vector<int> ps;
+int tf[1<<15];
+int ccc=0,cc2=0;
+
+int copc(int x, int y, int mo = 1) {
+    vector<int> p;
+    for (auto t : ps) {
+        if (x < t*t) break;
+        //if (mo % t == 0) continue;
+        if (x % t == 0) {
+            p .emplace_back(t);
+            x /=t;
+            while(x%t==0) x/=t;
+        }
+        ++cc2;
+    }
+    if (x > 1) p.emplace_back(x);
+    const int M = 1<<p.size();
+    int a = y;
+    for (int i = 1; i < M; ++i) {
+        int k = __builtin_ctz(i);
+        if (i==(i&(-i))) {
+            tf[i] = p[k];
+        } else tf[i] = p[k] * tf[i-(i&(-i))];
+        int d = y / tf[i];
+        if (__builtin_popcount(i) & 1) a -= d;
+        else a += d;
+    }
+    ccc+= M;
+    return a;
+}
+
+void factor(int x, int* v, int*vn) {
+    static int p[32], c[32], rp[32], i[32];
+    int tt = 0;
+    for (auto t : ps) {
+        if (x % t == 0) {
+            p[tt] = t;
+            c[tt] = 1;
+            tt++;
+            for (x/=t; x % t == 0; c[tt-1]++, x/=t);
+        }
+        if (x <= t*t) break;
+    }
+    if (x>1) {
+        p[tt] = x; c[tt++] = 1;
+    }
+    i[0] = 1;
+    fill(i+1,i+tt,0);
+    int kk = p[0];
+    for (int i = 0; i < tt; ++i) {
+        rp[i] = p[i];
+        for (int j = 0; j < c[i];++j) rp[i] *= p[i];
+    }
+    *vn=0;
+    TRACELN(cout<<'f'<<tt);
+    while(i[tt-1] <= c[tt-1]) {
+        v[(*vn)++] = kk;
+        TRACE(cout<<' '<<kk);
+
+        ++i[0];
+        kk *= p[0];
+        for (int k = 0; k < tt-1; ++k) {
+            if (i[k] > c[k]) {
+                i[k] =0;
+                kk /= rp[k];
+                i[k+1] ++;
+                kk *= p[k+1];
+            } else break;
+        }
+    }
+    TRACELN(cout<<"::"<<*vn);
+}
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -67,25 +140,35 @@ int main() {
 #endif
 
     int n; cin >>n;
-    vector<int> ps;
-    fill
     for (int i = 2; i <=n; ++i)
         if (0==ip[i]) {
+            //TRACE(cout<<' '<<i);
             ps .emplace_back(i);
+            if (i > 1000) continue;
             for (int j = i+i; j<=n; j+=i) ip[j] =1;
         }
-    for (int i = 2; i <= n; ++i) {
-    }
-    transform(hz+2,hz+n+1,rhz, [](int x) { return Cm{x}.mul_inv(); });
+    //TRACELN();
     const Cm rn = Cm{n}.mul_inv();
-    for (int i = 1; i <= n; ++i) {
-        if (i>1) {
-            f[i] *= (Cm{1} - (rn * (n/i))).mul_inv();
+    f[1] = 0;
+    array<int, 200> c;
+    int cn;
+    int cnt=0;
+    for (int i = 2; i <= n; ++i) {
+        factor(i, c.data(), &cn);
+        f[i] = 1;
+        TRACELN(cout<<"c"<<i<<' '<<copc(i,n)<<' '<<cn);
+        for (int u = 0; u < cn; ++u) {
+            int k = c[u];
+            if (k < i) {
+                ++cnt;
+                TRACE(cout<<' '<<k);
+                f[i] += f[k] * rn * copc(i/k,n/k);
+            }
         }
-        for (int j = i+i; j <= n; j += i) {
-            f[j] += (f[i]+1)*rhz[j/i];
-        }
+        TRACELN();
+        f[i] *= (Cm{1}-(rn*(n/i))).mul_inv();
     }
+    TRACELN(cout<<"cnt:"<<cnt<<' '<<ccc<<' '<<cc2);
     for (int i = 1; i <= n; ++i)
         cout<<f[i].v<<' ';
     cout<<endl;
