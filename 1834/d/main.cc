@@ -36,10 +36,10 @@ int main() {
         }
         int ans = 0;
         for (int i = 0; i < n; ++i) {
-            int t = sl;
-            t = min(t, max(lr+1, l[i]) - l[i]);
-            t = min(t, r[i] - max(r[i], rl-1));
-            ans = max(ans, r[i]-l[i]+1-t);
+            int t = r[i]-l[i]+1-sl;
+            t = max(t, r[i]-max(lr, l[i]-1));
+            t = max(t, min(rl, r[i]+1) - l[i]);
+            ans = max(ans, t);
         }
         cout<<ans*2<<endl;
     }
