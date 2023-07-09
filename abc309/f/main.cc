@@ -15,41 +15,26 @@ using namespace std;
 #define self_todo_placeholder
 
 const int N = 201001;
-int pn[N*60][4],tt = 0;
+int pl[N*30],pr[N*30],mi[N*30],tt = 0;
 
-void ins(int &r, int xl, int xr, int yl, int yr, int x, int y) {
-    if (0 == r) {
-        r = ++tt;
-        fill(pn[r], pn[r]+4, 0);
-    }
-    if (xl == xr) return;
-    int xd = (xl+xr)/2;
-    int yd = (yl+yr)/2;
-    if (x <= xd) {
-        if (y <= yd) ins(pn[r][0], xl,xd, yl,yd, x,y);
-        else ins(pn[r][1], xl,xd, yd+1,yr, x,y);
-    } else {
-        if (y <= yd) ins(pn[r][2], xd+1, xr, yl, yd, x,y);
-        else ins(pn[r][3], xd+1,xr, yd+1,yr, x,y);
-    }
+void ins(int &n, int l, int r, int x, int y) {
+    if (0 == n) {
+        n = ++tt;
+        pr[n] = pl[n] = 0;
+        mi[n] = y;
+    } else mi[n] = min(mi[n], y);
+    if (l == r) return;
+    int mid = (l+r) /2;
+    if (x <= mid) ins(pl[n], l, mid, x, y);
+    else ins(pr[n], mid+1, r, x,y);
 }
 
-bool findle(int r, int xl, int xr, int yl, int yr, int x, int y) {
-    if (r == 0) return false;
-    if (xr <= x && yr <= y) return true;
-    if (xl == xr) return false;
-    int xd = (xl+xr)/2;
-    int yd = (yl+yr)/2;
-    if (x > xd && y > yd) {
-        if (findle(pn[r][3], xd+1,xr, yd+1,yr, x,y)) return true;
-    }
-    if (x > xd) {
-        if (findle(pn[r][2], xd+1, xr, yl, yd, x,y)) return true;
-    }
-    if (y > yd) {
-        if (findle(pn[r][1], xl,xd, yd+1,yr, x,y)) return true;
-    }
-    return findle(pn[r][0], xl,xd, yl,yd, x,y);
+bool isle(int n, int l, int r, int x, int y) {
+    if (n == 0) return false;
+    if (r <= x) return mi[n] <= y;
+    int mid = (l+r)/2;
+    if (x > mid && isle(pr[n], mid+1, r, x, y)) return true;
+    return isle(pl[n], l, mid, x,y);
 }
 
 int main() {
@@ -76,9 +61,9 @@ int main() {
     for (auto [x,y,z]: a) {
         while (i < n && get<0>(a[i]) < x) {
             auto [t,u,v] = a[i++];
-            ins(gh, 1,L,1,L, u,v);
+            ins(gh, 1,L, u,v);
         }
-        if (y > 1 && z > 1 && findle(gh, 1,L,1,L, y-1,z-1)) {
+        if (y > 1 && z > 1 && isle(gh, 1,L, y-1,z-1)) {
             cout<<"Yes\n";return 0;
         }
     }
