@@ -14,6 +14,7 @@
 using namespace std;
 #define self_todo_placeholder
 
+typedef long long LL;
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -24,50 +25,44 @@ int main() {
 #endif
 
     int tt; cin >> tt; while (tt--) {
-        int u, v; cin >>u>>v;
-        if (u % 10 == 0) {
-            cout<<int64_t(u) * v<<endl;
-            continue;
-        }
-        if (u % 10 == 5) {
-            int64_t t = u;
-            t *= v;
-            t = max(t, int64_t(u+5) * (v-1));
-            cout<<t<<endl;
-            continue;
-        }
-        int64_t ans = 0;
+        LL u, v; cin >>u>>v;
+        LL ans = 0;
         while (u % 10 != 2 && v > 0) {
-            ans = max(ans, int64_t(u) * v);
+            ans = max(ans, LL(u) * v);
+            if (u % 10 == 0) break;
             u += u % 10;
             --v;
         }
-        auto ca = [&](int x) {
-            int64_t t = u;
-            t += (x / 4) * 20;
-            for (int j = x % 4; j > 0; --j) t += t % 10;
-            t *= v - x;
-            return t;
-        };
-        auto vl = ca(0), vr = ca(v-1);
-        int l,r;
-        for ( l = 0, r = v-1; l < r-10; ) {
-            //TRACELN(cout<<' '<<l<<' '<<r);
-            int t1 = l + max(1, (r-l) / 3);
-            int t2 = r - max(1, (r-l) / 3);
-            auto v1 = ca(t1), v2 = ca(t2);
-            ans = max(v1, ans);
-            ans = max(v2, ans);
-            auto m = max(vl, max(vr, max(v1, v2)));
-            if (vr == m || (v2 == m && vl != m)) {
-                l = t1;
-                vl = v1;
-            }  else {
-                r = t2;
-                vr = v2;
-            }
+        if (u % 10 == 0) {
+            cout<<ans<<endl; continue;
         }
-        while (l <= r) ans = max(ans, ca(l++));
+        auto ca = [&](LL t) { return (t >= 0 && t <= v) ?(u + t *5)*(v-t) : 0;};
+        for (int _i = 0; _i < 4; ++_i) {
+            // (u + 5x)(v - x)
+            // 1/5*(u+5x)(5v-5x)
+            LL t = u;
+            t += v * 5;
+            t >>= 1;
+            t -= u;
+            t /= 5;
+            t = min(max(LL(0), t), v);
+            t -= t & 3;
+
+            ans = max(ans, ca(t));
+                TRACELN(cout<<t<<' '<<u<<' '<<v<<' '<<ca(t));
+            while ((u+t*5)<(5*v-5*t) && t < v) {
+                t += 4;
+                TRACELN(cout<<t<<' '<<u<<' '<<v<<' '<<ca(t));
+                ans = max(ans, ca(t));
+            }
+            while ((u+t*5)>(5*v-5*t) && t > 0) {
+                t -= 4;
+                TRACELN(cout<<t<<' '<<u<<' '<<v<<' '<<ca(t));
+                ans = max(ans, ca(t));
+            }
+
+            u += u % 10, --v; // iter
+        }
         cout<<ans<<endl;
     }
     return 0;
