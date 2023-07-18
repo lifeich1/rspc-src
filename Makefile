@@ -26,6 +26,7 @@ show_ddir:
 	$(info $(adir))
 
 $(adir): f = $(patsubst _archive/%,%,$@)
+$(adir): is = $(shell perl ./.tools/archive_contest_issue.pl $@)
 $(adir):
 	git mv $(f) $@
-	git commit -a -m ":truck: _archive $(f), close #" -e
+	git commit -a -m ":truck: _archive $(f), close #$(is)" -e
