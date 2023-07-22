@@ -6,10 +6,12 @@ Session.vim
 !*/*.rs
 !*/*.cc
 !*/*.md
+!*/gen.py
 
 !*/*/*.rs
 !*/*/*.cc
 !*/*/*.md
+!*/*/gen.py
 
 !*/a
 !*/b
