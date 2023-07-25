@@ -15,7 +15,11 @@ class index:
         self._hdrs()
         i = web.input()
         print(i.ns)
-        print(i.ul)
+        a = i.ul.split('/')
+        print(repr(a))
+        fn = './leetcode/'+a[4]+'.txt'
+        with open(fn, 'w') as fo:
+            print(i.ns, file=fo)
         return 'ok'
     def OPTIONS(self):
         self._hdrs()
