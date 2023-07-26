@@ -25,5 +25,8 @@ Session.vim
 !*/j
 !*/k
 
+!START*/*
+!start*/*
+
 !/leetcode
 !/leetcode/**
