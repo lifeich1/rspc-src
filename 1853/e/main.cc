@@ -31,12 +31,33 @@ int main() {
   int tt;
   cin >> tt;
   vector<int> a;
-  vector<int64_t> b;
   while (tt--) {
     int n, k;
     cin >> n >> k;
     a.resize(n);
     copy_n(std::istream_iterator<int>(std::cin), n, a.begin());
+    multiset<int64_t> co;
+    a[0] %= k;
+    int64_t ans = a[0], l = a[0];
+    co.insert(k);
+    TLN(TV(ans); TV(l));
+    for (int i = 1; i < n; ++i) {
+      int64_t t = a[i] % k;
+      t += l - l % k;
+      if (t >= k && t > l)
+        t -= k;
+      co.insert(t + k - l);
+      if (t <= l) {
+        l = t;
+      } else {
+        co.insert(t - l);
+        l = t;
+        ans += *co.begin();
+        co.erase(co.begin());
+      }
+      TLN(TV(i); TV(ans); TV(l));
+    }
+    cout << ans << endl;
   }
   return 0;
 }
