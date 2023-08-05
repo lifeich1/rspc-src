@@ -37,12 +37,59 @@ int main() {
     cin >> n;
     vector<int> a;
     copy_n(std::istream_iterator<int>(std::cin), n, std::back_inserter(a));
+    bool qk = true;
+    for (int i = 1; i < n; ++i)
+      if (a[i - 1] > a[i]) {
+        qk = false;
+        break;
+      }
+    if (qk) {
+      cout << "0\n";
+      continue;
+    }
+    int t1 = *max_element(a.begin(), a.end());
+    int t2 = *min_element(a.begin(), a.end());
+    int y1 = count_if(a.begin(), a.end(), [](int x) { return x < 0; });
+    int y2 = count_if(a.begin(), a.end(), [](int x) { return x > 0; });
+    int x1 = 0, x2 = 0;
+    if (t1 <= 0)
+      x1 = n;
+    if (t2 >= 0)
+      x2 = n;
+    if (t1 > 0 && t2 < 0) {
+      for (int t = t1; t + t2 < 0; t += t, x1++)
+        ;
+      for (int t = t2; t + t1 > 0; t += t, x2++)
+        ;
+    }
+    vector<pair<int, int>> ans;
+    bool rb = false;
+    if (x1 + y1 > x2 + y2) {
+      rb = true;
+      for_each(a.begin(), a.end(), [](int &x) { x = -x; });
+    }
+    t1 = *max_element(a.begin(), a.end());
+    t2 = *min_element(a.begin(), a.end());
+    int k1 = max_element(a.begin(), a.end()) - a.begin();
+    while (a[k1] + t2 < 0) {
+      a[k1] += a[k1];
+      ans.emplace_back(k1 + 1, k1 + 1);
+    }
     for (int i = 0; i < n; ++i)
-      fill(f[i], f[i] + n, 99);
-    for (int i = 0; i < n; ++i)
-      f[i][i] = 0;
-    for (int p = 1; p < n; ++p) {
-      for (int i =)
+      if (a[i] < 0) {
+        a[i] += a[k1];
+        ans.emplace_back(i + 1, k1 + 1);
+      }
+    if (rb) {
+      for (int i = n; i > 1; --i)
+        ans.emplace_back(i - 1, i);
+    } else {
+      for (int i = 1; i < n; ++i)
+        ans.emplace_back(i + 1, i);
+    }
+    cout << ans.size() << endl;
+    for (auto [i, j] : ans) {
+      cout << i << ' ' << j << endl;
     }
   }
   return 0;
