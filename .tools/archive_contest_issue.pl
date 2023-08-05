@@ -3,15 +3,16 @@ use utf8;
 use strict;
 
 my $tg = shift;
-if ($tg =~ m{_archive/(\w+)}) {
+if ( $tg =~ m{_archive/(\w+)} ) {
     $tg = $1;
 }
 say STDERR "tg: $tg";
 
-chomp(my $line = qx(git log --oneline | grep "$tg" | head -n 1));
+chomp( my $line = qx(git log --oneline -20| grep "$tg" | head -n 1) );
 say STDERR "line: $line";
-if ($line =~ m{:accept: (?:AC )?$tg \w+ \(#(\d+)\)}) {
+if ( $line =~ m{:accept: (?:AC )?$tg \w+ \(#(\d+)\)} ) {
     say $1;
-} elsif ($line =~ m{:tada: $tg \(#(\d+)\)}) {
+}
+elsif ( $line =~ m{:tada: $tg \(#(\d+)\)} ) {
     say $1;
 }
