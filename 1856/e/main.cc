@@ -22,7 +22,7 @@ using namespace std;
 const int N = 1001001;
 vector<int> sn[N];
 int pa[N], z[N];
-int g[N];
+uint64_t g[N / 60];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -37,22 +37,79 @@ int main() {
   copy_n(std::istream_iterator<int>(std::cin), n - 1, pa + 2);
   int64_t ans = 0;
   for (int i = n; i > 0; --i) {
+    int r = (z[i] >> 6) + 1;
+    int lm = z[i] >> 1;
     z[i]++;
-    fill(g + 1, g + z[i] + 1, 0);
+    for (auto p : sn[i])
+      if (z[p] >= lm) {
+        int64_t t = z[p];
+        t *= z[i] - 1 - t;
+        ans += t;
+        lm = -1;
+        z[pa[i]] += z[i];
+        sn[pa[i]].emplace_back(i);
+        break;
+      }
+    if (lm < 0)
+      continue;
+    fill(g, g + r, 0);
     g[0] = 1;
-    int l = 0;
-    for (auto p : sn[i]) {
-      for (int k = l; k >= 0; --k)
-        g[k + z[p]] |= g[k];
-      l += z[p];
+    map<int, int> c;
+    for (auto p : sn[i])
+      c[z[p]]++;
+    for (auto &[k, v] : c) {
+      if (v > 2) {
+        int t = (v - 1) / 2;
+        v -= t + t;
+        c[k + k] += t;
+      }
     }
-    int64_t t = 0;
-    l /= 2;
-    for (int k = 0; k <= l; ++k)
-      if (g[k])
-        t = max(t, int64_t(k) * (z[i] - k - 1));
+
+    int l = 0;
+    for (auto [k, v] : c) {
+      for (int _i = 0; _i < v; ++_i) {
+        l += k;
+        int nl = ((l - 1) >> 6) + 1;
+        for (int p = nl; p >= 0; --p) {
+          int t = p - (k >> 6);
+          if (t < 0)
+            break;
+          auto t1 = g[t];
+          t1 <<= k & 63;
+          g[p] |= t1;
+          if ((k & 63) > 0 && t > 0) {
+            t1 = g[t - 1];
+            t1 >>= 64 - (k & 63);
+            g[p] |= t1;
+          }
+        }
+      }
+    }
+    auto chp = [&](int i) { return (g[i >> 6] >> (i & 63)) & 1; };
+    int bs = -1;
+    for (l = (z[i] - 1) / 2; (l & 63) != 0; --l)
+      if (chp(l)) {
+        bs = l;
+        break;
+      }
+    if (chp(l))
+      bs = l;
+    if (bs < 0) {
+      for (int p = (l >> 6) - 1; p >= 0 && g[p] == 0; --p)
+        l -= 64;
+      for (; l >= 0; --l)
+        if (chp(l)) {
+          bs = l;
+          break;
+        }
+    }
+
+    int64_t t = bs;
+    t *= z[i] - bs - 1;
     ans += t;
-    TLN(TV(i); TV(t); TV(ans));
+    TLN(TV(i); TV(bs); TV(t); TV(ans); TV(g[0]); cerr << " 0x" << hex << g[0];
+        TA(c, auto [k, v] = _; cerr << '(' << k << ',' << v << ") "));
+
     z[pa[i]] += z[i];
     sn[pa[i]].emplace_back(i);
   }
