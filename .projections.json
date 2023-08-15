@@ -1,0 +1,24 @@
+{
+    "*/main.cc": {
+        "type": "m",
+        "alternate": [
+            "{}/ff.cc",
+            "{}/1.in",
+            "{}/1.out",
+            "{}/1.ans"
+        ]
+    },
+    "*/ff.cc": {
+        "type": "f",
+        "alternate": "{}/main.cc"
+    },
+    "*/1.in": {
+        "type": "ai"
+    },
+    "*/1.out": {
+        "type": "ao"
+    },
+    "*/1.ans": {
+        "type": "aa"
+    }
+}
