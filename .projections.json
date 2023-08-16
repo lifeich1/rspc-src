@@ -20,5 +20,26 @@
     },
     "*/1.ans": {
         "type": "aa"
+    },
+    "*.in": {
+        "type": "i",
+        "alternate": [
+            "{}.out",
+            "{}.ans"
+        ]
+    },
+    "*.out": {
+        "type": "o",
+        "alternate": [
+            "{}.in",
+            "{}.ans"
+        ]
+    },
+    "*.ans": {
+        "type": "a",
+        "alternate": [
+            "{}.in",
+            "{}.out"
+        ]
     }
 }
