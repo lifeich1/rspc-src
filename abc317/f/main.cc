@@ -13,7 +13,7 @@ template <int64_t M, class T = int64_t> class CalcInMod {
 public:
   typedef T data_t;
   T v;
-  CalcInMod() {}
+  CalcInMod() : v{0} {}
   CalcInMod(int v) : v{static_cast<T>(v)} {}
   CalcInMod(T v) : v{v} {}
   int as_i() { return static_cast<int>(v); }
@@ -71,6 +71,7 @@ public:
 using namespace std;
 #define self_todo_placeholder
 
+const int M = 998244353;
 typedef A::CalcInMod<998244353> Cm;
 
 int main() {
@@ -84,77 +85,77 @@ int main() {
   int64_t n;
   int a, b, c;
   cin >> n >> a >> b >> c;
-  typedef map<tuple<int, int, int>, Cm> F;
+  // icmp, jcmp,  kcmp, r1, r2, r3
+  typedef map<tuple<int, int, int, int, int, int>, Cm> F;
   F _f, _g;
-  auto f = [&](int i, int j, int k) -> Cm & { return _f[make_tuple(i, j, k)]; };
-  f(0, 0, 0) = 1;
+  auto f = [&](int c1, int c2, int c3, int i, int j, int k) -> Cm & {
+    return _f[make_tuple(c1, c2, c3, i, j, k)];
+  };
+  auto rf = [&](int c1, int c2, int c3, int i, int j, int k) -> Cm {
+    auto K = make_tuple(c1, c2, c3, i, j, k);
+    if (_f.count(K) == 0)
+      return 0;
+    return _f[K];
+  };
+  auto ad = [&](int c1, int c2, int c3, int i, int j, int k, Cm const &v) {
+    auto &T = f(c1, c2, c3, i, j, k);
+    TLN(cerr << "    " << c1 << ' ' << c2 << ' ' << c3 << ',' << i << ' ' << j
+             << ' ' << k << "+=" << v.v << ((i | j | k) == 0 ? "  !! " : " ")
+             << T.v << ' ';
+        TV(_f.size()));
+    T += v;
+  };
+  f(0, 0, 0, 0, 0, 0) = 1;
   Cm ans = 0;
-  int l = 0;
-  for (auto t = n; t > 0; t >>= 1, ++l)
-    ;
-  bool nfr = false;
-  while (--l >= 0) {
-    auto w = (n >> l) & 1;
+  vector<int> w;
+  for (auto t = n; t > 0; t >>= 1)
+    w.emplace_back(t & 1);
+  reverse(w.begin(), w.end());
+  for (auto bt : w) {
     _g.swap(_f);
     _f.clear();
+    TLN(static int tt = 0; cerr << tt++ << ':' << bt);
+    TLN(TV(_f.size()); TV(rf(-1, -1, -1, 0, 0, 0).v));
     for (auto const &[K, v] : _g) {
-      if (v.v == 0)
-        continue;
-      auto [ri, rj, rk] = K;
-      auto id = ri / a, jd = rj / b, kd = rk / c;
-      auto i = ri % a, j = rj % b, k = rk % c;
-      auto tw = [](int w, int d0, int d) -> int { // rc: 0n  1eq 2lt 3gt
-        if (1 == d0 || (0 == d0 && d != 0)) {     // eq
-          if (w > d)
-            return 2;
-          if (w < d)
-            return 3;
-          return 1;
-        } else
-          return d0;
+      auto nxcmp = [](int c0, int b, int d) {
+        if (c0 != 0)
+          return c0;
+        if (b == d)
+          return 0;
+        return b > d ? -1 : 1;
       };
-      Cm vv = v;
-#if defined(RSPC_TRACE_HINT)
-      auto KK = K;
-#endif
-      auto ta = [&](int d0, int d1, int d2) {
-        auto x = (i * 2 + d0) % a + tw(w, id, d0) * a;
-        auto y = (j * 2 + d1) % b + tw(w, jd, d1) * b;
-        auto z = (k * 2 + d2) % c + tw(w, kd, d2) * c;
-#if 1
-        TLN(auto [ri, rj, rk] = KK;
-            cerr << "::" << ri << ',' << rj << ',' << rk << " => " << x << ','
-                 << y << ',' << z << "  +" << vv.v;
-            cerr << "  ||" << i << ' ' << j << ' ' << k << ' ' << w << " -- "
-                 << tw(w, jd, d1) << ' ' << w << jd << d1);
-#endif
-        f(x, y, z) += vv;
+      auto nxr = [](int r0, int d, int m) { return (r0 + r0 + d) % m; };
+      auto ta = [&](auto const &K, Cm v, int d0, int d1, int d2) {
+        auto const &[c0, c1, c2, r0, r1, r2] = K;
+        ad(nxcmp(c0, bt, d0), nxcmp(c1, bt, d1), nxcmp(c2, bt, d2),
+           nxr(r0, d0, a), nxr(r1, d1, b), nxr(r2, d2, c), v);
       };
-      if (nfr)
-        ta(0, 0, 0);
-      ta(0, 1, 1);
-      ta(1, 0, 1);
-      ta(1, 1, 0);
+      TLN(auto const &[c0, c1, c2, r0, r1, r2] = K;
+          cerr << "  " << c0 << ' ' << c1 << ' ' << c2 << ',' << r0 << ' ' << r1
+               << ' ' << r2 << '=' << v.v);
+      ta(K, v, 0, 0, 0);
+      ta(K, v, 1, 0, 1);
+      ta(K, v, 1, 1, 0);
+      ta(K, v, 0, 1, 1);
     }
-    nfr = true;
-#if defined(RSPC_TRACE_HINT)
-    for (auto [K, v] : _f) {
-      if (v.v == 0)
-        continue;
-      auto [i, j, k] = K;
-      TLN(TV(l); TV(w); cerr << i << ',' << j << ',' << k << '=' << v.v;
-          if (i % a == 0 && j % b == 0 && k % c == 0 && i > 0 && j > 0 && k > 0)
-              cerr
-          << "  !!");
-    }
-#endif
-    int u = l > 0 ? 4 : 3;
-    for (int i = 1; i < u; ++i)
-      for (int j = 1; j < u; ++j)
-        for (int k = 1; k < u; ++k)
-          ans += f(i * a, j * b, k * c);
-    TLN(TV(ans.v));
   }
+  for (int i = -1; i < 1; ++i)
+    for (int j = -1; j < 1; ++j)
+      for (int k = -1; k < 1; ++k)
+        ans += rf(i, j, k, 0, 0, 0);
+  auto rd = [](int64_t n, int a, int b) -> Cm {
+    a /= __gcd(a, b);
+    n /= a * b;
+    n %= M;
+    TLN(TV(n); TV(a); TV(b));
+    return Cm{n};
+  };
+#if 1
+  ans -= rd(n, a, b);
+  ans -= rd(n, c, b);
+  ans -= rd(n, a, c);
+  ans -= 1;
+#endif
   cout << ans.v << endl;
   return 0;
 }
