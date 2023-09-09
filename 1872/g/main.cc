@@ -23,7 +23,7 @@
 using namespace std;
 #define self_todo_placeholder
 const int N = 201001;
-int a[N];
+int a[N], sp[N], mp[N];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -35,7 +35,7 @@ int main() {
 
   int tt;
   cin >> tt;
-  const int m = 1 << 20;
+  const int m = 1 << 21;
   while (tt--) {
     int n;
     cin >> n;
@@ -57,33 +57,26 @@ int main() {
       cout << l << ' ' << r << endl;
       continue;
     }
-    if (ts >= t) {
-      cout << "1 1\n";
-      continue;
+    vector<int> ps;
+    mp[0] = 1, sp[0] = 0;
+    for (int i = 0; i < n; ++i) {
+      sp[i + 1] = sp[i] + a[i];
+      mp[i + 1] = mp[i] * a[i];
+      if (a[i] > 1)
+        ps.emplace_back(i);
     }
-    for (bool go = true; go;) {
-      go = false;
-      int s = a[l], j = l;
-      while (a[j + 1] == 1 && j < r)
-        s++, j++;
-      if (s > (t - t / a[l])) {
-        t /= a[l];
-        l = j;
-        go = true;
+    int bs = 0;
+    l = 1, r = 1;
+    for (int i = 0; i < ps.size(); ++i)
+      for (int j = i + 1; j < ps.size(); ++j) {
+        int x = ps[i], y = ps[j];
+        int t = mp[y + 1] / mp[x] - sp[y + 1] + sp[x];
+        if (t > bs) {
+          bs = t;
+          l = x + 1, r = y + 1;
+          TLN(TV(tt); TV(bs); TV(l); TV(r));
+        }
       }
-    }
-    for (bool go = true; go;) {
-      int s = a[r], j = r;
-      go = false;
-      while (a[j - 1] == 1 && j > l)
-        --j, ++s;
-      if (s > (t - t / a[r])) {
-        t /= a[r];
-        r = j;
-        go = true;
-      }
-    }
-    ++l, ++r;
     cout << l << ' ' << r << endl;
   }
   return 0;
