@@ -98,50 +98,9 @@ using namespace std;
 
 typedef modint<998244353> mint;
 const int N = 201001;
-int sz[N * 40], np[N * 40][2], tt;
-int ls[N], lsn, u[N];
-vector<int> e[N];
 mint f[N];
-
-void pins(int &n, int l, int r, int x) {
-  int m = ++tt;
-  sz[m] = sz[n] + 1;
-  np[m][0] = np[n][0];
-  np[m][1] = np[n][1];
-  n = m;
-  if (l == r)
-    return;
-  int mid = (l + r) >> 1;
-  if (x <= mid)
-    pins(np[m][0], l, mid, x);
-  else
-    pins(np[m][1], mid + 1, r, x);
-}
-
-bool ptest(int n, int l, int r, int x) {
-  if (sz[n] == 0)
-    return false;
-  if (l == r)
-    return true;
-  int mid = (l + r) >> 1;
-  if (x <= mid)
-    return ptest(np[n][0], l, mid, x);
-  else
-    return ptest(np[n][1], mid + 1, r, x);
-}
-
-void tra(int n, int l, int r) {
-  if (sz[n] == r - l + 1)
-    return;
-  if (l == r) {
-    ls[lsn++] = l;
-    return;
-  }
-
-  int mid = (l + r) >> 1;
-  tra(np[n][0], l, mid);
-  tra(np[n][1], mid + 1, r);
-}
+vector<int> e[N];
+int u[N], nr[N], bu[N], bs[N];
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -161,43 +120,45 @@ int main() {
   }
 
   vector<int> ps, qs;
+  ps.reserve(n);
+  qs.reserve(n);
   qs.emplace_back(1);
   f[1] = 1;
-  tt = 1;
-  int h = 1;
-  pins(h, 1, n, 1);
-  qs.reserve(n);
-  ps.reserve(n);
-  u[1] = 1;
+  nr[0] = 2;
+  for (int i = 2; i < n; ++i)
+    nr[i] = i + 1;
 
-  while (qs.size() && u[n] == 0) {
+  while (qs.size() && 0 == u[n]) {
     ps.clear();
     ps.swap(qs);
+    mint w = 0;
+    const int fl = ps.front();
     for (auto x : ps) {
-      int _h = h, _tt = tt;
-      for (auto y : e[x]) {
-        if (ptest(h, 1, n, y))
-          continue;
-        pins(h, 1, n, y);
-      }
-      lsn = 0;
-      tra(h, 1, n);
-      h = _h;
-      tt = _tt;
-      for (int i = 0; i < lsn; ++i) {
-        int y = ls[i];
-        f[y] += f[x];
-        if (u[y] == 0) {
-          qs.emplace_back(y);
-          u[y] = 1;
+      w += f[x];
+      for (auto y : e[x])
+        if (bu[y] == fl)
+          ++bs[y];
+        else
+          bu[y] = fl, bs[y] = 1;
+    }
+    TLN(TA(ps, cerr << _ << ' '); TV(w.v));
+    for (auto h = 0, x = nr[0]; x != 0;)
+      if (fl != bu[x] || bs[x] < ps.size()) {
+        qs.emplace_back(x);
+        f[x] = w;
+        u[x] = 1;
+        bu[x] = -fl;
+        x = nr[h] = nr[x];
+      } else
+        h = x, x = nr[x];
+    for (auto x : ps)
+      for (auto y : e[x])
+        if (-fl == bu[y]) {
+          f[y] -= f[x];
         }
-      }
-    }
-    for (auto x : qs) {
-      pins(h, 1, n, x);
-    }
   }
-  if (qs.size())
+
+  if (u[n])
     cout << f[n].v << endl;
   else
     cout << "-1\n";
