@@ -45,34 +45,50 @@ int main() {
       cout << "1 ";
     cout << endl;
   } else {
-    int z[2] = {0, 0};
-    for (int i = 2; i <= n; ++i)
+    vector<int> c(n + 1, 0);
+    for (int i = n; i >= 2; --i) {
       if (sn[i] == 1)
-        z[de[i] & 1] = i;
-    if (z[0] && z[1]) {
+        c[i] = 1;
+      if (c[i])
+        c[pa[i]] = 3 - c[i];
+    }
+    TLN(TA(c, cerr << _ << ' '));
+    c[1] = 2;
+    for (int i = 2; i <= n; ++i) {
+      if (0 == c[i])
+        c[i] = 3 - c[pa[i]];
+    }
+    c[1] = 0;
+    TLN(TA(c, cerr << _ << ' '));
+    bool ok2 = true;
+    for (int i = 2; i <= n; ++i)
+      if ((pa[i] != 1 && c[i] == c[pa[i]]) || (sn[i] == 1 && c[i] != 1)) {
+        ok2 = false;
+        break;
+      }
+
+    if (!ok2) {
       sch = 3;
+      cout << "3\n";
       for (int i = 2; i <= n; ++i) {
         cout << ((de[i] - 1) % 3 + 1) << " ";
       }
-      rp = [](vector<int> &a) {
+      rp = [](vector<int> &a) -> int {
+        if (2 == count(a.begin(), a.end(), 0)) {
+          return (max_element(a.begin(), a.end()) - a.begin()) + 1;
+        }
         int t = find(a.begin(), a.end(), 0) - a.begin();
         return (t + 1) % 3 + 1;
       };
     } else {
       sch = 2;
-      for (int i = 2; i <= n; ++i) {
-        if (de[i] & 1)
-          cout << "1 ";
-        else
-          cout << "2 ";
-      }
+      cout << "2\n";
+      for (int i = 2; i <= n; ++i)
+        cout << c[i] << ' ';
+      cout << endl;
       rp = [=](vector<int> &a) {
         if (a[0] == a[1] && a[0] == 1) {
-          int t = de[z[0] || z[1]] & 1;
-          if (t)
-            return 1;
-          else
-            return 2;
+          return 1;
         }
         if (a[0] == 1)
           return 1;
