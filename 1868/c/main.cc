@@ -104,10 +104,35 @@ using namespace std;
 
 typedef modint<998244353> mint;
 
-map<pair<int64_t, int>, mint> _f;
+map<pair<int64_t, int>, mint> _f, _g;
 
 bool used(int64_t x, int y) { return _f.count(make_pair(x, y)) != 0; }
 mint &f(int64_t x, int y) { return _f[make_pair(x, y)]; }
+
+int64_t gn;
+mint fca(int64_t x, int l) {
+  if (x > gn)
+    return 0;
+  if (1 == l)
+    return 1;
+  auto it = _f.find({x, l});
+  if (it != _f.end())
+    return it->second;
+  mint &r = _f[make_pair(x, l)];
+  r = 0;
+  int64_t t = 1;
+  t <<= 64 - __builtin_clzll(x);
+  mint k0 = x + x + 1 - t;
+  k0 *= 1;
+  r += k0 * fca(t, l - 1);
+  r += fca(x + x + 1, l - 1);
+  return r;
+}
+
+mint gca(int64_t x, int l) {
+#error TODO
+  return 0;
+}
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -127,21 +152,44 @@ int main() {
     auto &[n, m] = qq[i];
     cin >> n >> m;
     sm.emplace(m);
+    mu[m].emplace_back(0);
   }
   int mm = *sm.rbegin();
   vector<mint> tk(mm + 1, 1);
-  for (int k = 0; k < 64; ++k) {
+  for (int l = 1; l < 64; ++l) {
     mint rh = 0;
     for (int i = 1; i <= mm; ++i) {
       if (sm.find(i) != sm.end())
-        mu[i].emplace_back(mint(i).get_pow(k + 1) - rh);
-      rh += tk[i];
+        mu[i].emplace_back(mint(i).get_pow(l + 1) - rh);
       tk[i] *= i;
+      rh += tk[i];
     }
   }
   for (auto [n, m] : qq) {
     _f.clear();
-    int L = 64 - __builtin_clzll(n);
+    _g.clear();
+    auto t0 = n;
+    mint ans = 0;
+    gn = n;
+    for (int i = 1; t0 > 0; t0 >>= 1, ++i) {
+      int64_t t1 = t0;
+      while (__builtin_popcountll(t1) > 1)
+        t1 -= t1 & (-t1);
+      mint k0 = t0 - t1;
+      k0 *= 1;
+      for (int j = 1; j <= i + i - 1; ++j) {
+        ans += gca(t0, j) * mu[m][j];
+        ans += gca(t1, j) * mu[m][j] * k0;
+        TLN(TV(i); TV(j); TV(ans.v));
+      }
+    }
+#if defined(RSPC_TRACE_HINT)
+    for (auto [k, v] : _f) {
+      auto [x, l] = k;
+      TLN(TV(x); TV(l); TV(v.v));
+    }
+#endif
+    cout << ans.v << endl;
   }
   return 0;
 }
