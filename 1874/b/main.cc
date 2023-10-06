@@ -23,70 +23,9 @@
 using namespace std;
 #define self_todo_placeholder
 
-int ra[8][4], nx[8][4];
-
-int gra(int i, int j) {
-  int &v = ra[i][j];
-  return v;
-}
-
-int abl(int a, int b, int c, int d, int m, int vv = 0) {
-  int sm = 15;
-  for (int i = 0; i < 30 && sm > 0; ++i) {
-    sm &= gra((a & 1) + (b & 1) * 2 + (m & 1) * 4, (c & 1) + (d & 1) * 2);
-#if defined(RSPC_TRACE_HINT)
-    if (vv)
-      TLN(TV(i); TV(sm); TV((a & 1) + (b & 1) * 2 + (m & 1) * 4);
-          TV((c & 1) + (d & 1) * 2);
-          TV(gra((a & 1) + (b & 1) * 2 + (m & 1) * 4, (c & 1) + (d & 1) * 2)));
-#endif
-    a >>= 1, b >>= 1, c >>= 1, d >>= 1, m >>= 1;
-  }
-  return sm;
-}
-
-unordered_map<int64_t, int> F;
-int64_t ban = 0;
-int64_t nk(int64_t x, int k) {
-  int64_t r = 0;
-  for (int i = 0; i < 32; ++i) {
-    if ((x >> i) & 1) {
-      int st = i & 7, ds = i >> 3;
-      st = nx[st][k] | (st & 4);
-      r |= int64_t(1) << int64_t(ds * 8 + st);
-    }
-  }
-  return r;
-}
-int qf(int64_t x) {
-  if (x & ban)
-    return 0;
-  if (F.count(x) != 0)
-    return F[x];
-  bool ok = true;
-  for (int i = 0; i < 32; ++i)
-    if ((x >> i) & 1) {
-      int st = i & 7, ds = i >> 3;
-      if (ds != (st & 3)) {
-        ok = false;
-        break;
-      }
-    }
-  int &v = F[x];
-  v = 0;
-  if (ok) {
-    v = 1;
-    return v;
-  }
-  for (int k = 0; k < 4; ++k) {
-    auto y = nk(x, k);
-    auto t = qf(y);
-    if (t > 0 && (t + 1 < v || v == 0)) {
-      v = t + 1;
-    }
-  }
-  return v;
-}
+int nx[8][4];
+unordered_map<int, int> f;
+unordered_map<int, vector<int>> e;
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -98,70 +37,115 @@ int main() {
 
   int tt;
   cin >> tt;
-  vector<tuple<int, int, int, int>> ls;
+  vector<pair<int, int>> ls;
   for (int i = 0; i < 8; ++i) {
     int x = i & 1, y = (i >> 1) & 1, m = (i >> 2) & 1;
     auto g = [](int x, int y) { return x + y + y; };
-    nx[i][0] = g(x & y, y);
-    nx[i][1] = g(x | y, y);
-    nx[i][2] = g(x, x ^ y);
-    nx[i][3] = g(x, m ^ y);
-    fill(ra[i], ra[i] + 4, 0);
-    ra[i][g(x, y)] = 15;
+    nx[i][0] = g(x & y, y) | (i & 4);
+    nx[i][1] = g(x | y, y) | (i & 4);
+    nx[i][2] = g(x, x ^ y) | (i & 4);
+    nx[i][3] = g(x, m ^ y) | (i & 4);
   }
-  for (bool kp = true; kp;) {
-    kp = 0;
-    for (int st = 0; st < 8; ++st)
-      for (int ds = 0; ds < 4; ++ds)
-        for (int k = 0; k < 4; ++k) {
-          int t = 1 << k;
-          if (ra[st][ds] & t)
-            continue;
-          if (ra[nx[st][k] | (st & 4)][ds]) {
-            ra[st][ds] |= t;
-            kp = true;
-          } else if (nx[st][k] == (st & 3) && ra[st][ds]) {
-            ra[st][ds] |= t;
-            kp = true;
-          }
-        }
-  }
-  for (int st = 0; st < 8; ++st)
-    for (int ds = 0; ds < 4; ++ds)
-      if (ra[st][ds] == 0) {
-        int w = ds;
-        w <<= 3;
-        w |= st;
-        ban |= int64_t(1) << w;
+  TLN(TV(nx[3][0]));
+  for (int i = 0; i < (1 << 8); ++i) {
+    int r = 0;
+    for (int p = 0; p < 8; ++p) {
+      if ((i >> p) & 1) {
+        r |= (p & 3) << (3 * p);
+      } else {
+        r |= 4 << (3 * p);
       }
+    }
+    f[r] = 0;
+    ls.emplace_back(r, 0);
+  }
+  for (int i = 0, _i = 5 << 21; i < _i;) {
+    for (int j = 0; j < 4; ++j) {
+      bool ok = true;
+      vector<int> h(8, 4);
+      for (int p = 0; p < 8; ++p) {
+        int t = (i >> (p * 3)) & 7;
+        if (t != 4) {
+          int y = nx[p][j];
+          if (h[y] != 4 && h[y] != t) {
+            ok = false;
+            break;
+          }
+          h[y] = t;
+        }
+      }
+      if (!ok)
+        continue;
+      int r = 0;
+      for (int p = 0; p < 8; ++p) {
+        r |= h[p] << (3 * p);
+      }
+      if (r != i) {
+#if defined(RSPC_TRACE_HINT)
+        if (i == 04400440) {
+          TLN(cerr << oct; TV(r); TV(i); cerr << dec; TV(j); TV(ok));
+        }
+#endif
+        e[r].emplace_back(i);
+      }
+    }
+    int g = 0;
+    while (g < 8 && ((i >> (g * 3)) & 7) >= 4) {
+      i ^= i & (7 << (g * 3));
+      ++g;
+    }
+    if (g >= 8)
+      break;
+    i += 1 << (3 * g);
+  }
+  for (size_t p = 0; p < ls.size(); ++p) {
+    auto [x, v] = ls[p];
+    ++v;
+    for (auto y : e[x]) {
+#if defined(RSPC_TRACE_HINT)
+      if (y == 04400440) {
+        TLN(cerr << oct; TV(x); TV(y); cerr << dec; TV(v));
+      }
+#endif
+      if (f.count(y) == 0) {
+        f[y] = v;
+        ls.emplace_back(y, v);
+      }
+    }
+  }
 
   while (tt--) {
     int a, b, c, d, m;
     cin >> a >> b >> c >> d >> m;
-    if (0 == abl(a, b, c, d, m)) {
-      cout << "-1\n";
-      continue;
-    }
-    int64_t s = 0;
+    vector<int> h(8, 4);
+    bool ok = true;
+    TLN(cerr << dec; TV(tt));
     for (int i = 0; i < 30; ++i) {
-      int64_t w = 0;
-      w <<= 1;
-      w |= d & 1;
-      w <<= 1;
-      w |= c & 1;
-      w <<= 1;
-      w |= m & 1;
-      w <<= 1;
-      w |= b & 1;
-      w <<= 1;
-      w |= a & 1;
-      s |= int64_t(1) << w;
+      int u = (m & 1) * 4 + (b & 1) * 2 + (a & 1);
+      int v = (d & 1) * 2 + (c & 1);
+      if (h[u] != 4 && h[u] != v) {
+        ok = false;
+        break;
+      }
+      h[u] = v;
+#if defined(RSPC_TRACE_HINT)
+      if ((u & 3) != v)
+        TLN(TV(i); TV(u); TV(v));
+#endif
       a >>= 1, b >>= 1, c >>= 1, d >>= 1, m >>= 1;
-      TV(w);
     }
-    TLN(TV(s));
-    cout << qf(s) - 1 << endl;
-    TLN(TV(F.size()));
+    int ans = -1;
+    if (ok) {
+      int r = 0;
+      for (int i = 0; i < 8; ++i) {
+        r |= h[i] << (i * 3);
+        TLN(TV(i); TV(h[i]); cerr << oct; TV(r); cerr << dec;);
+      }
+      TLN(cerr << oct; TV(r));
+      if (f.count(r) != 0)
+        ans = f[r];
+    }
+    cout << ans << endl;
   }
   return 0;
 }
