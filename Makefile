@@ -6,7 +6,7 @@ new:
 	cd $(D) && vim
 endif
 
-.PHONY: lc
+.PHONY: lc clean ac tada
 lc:
 	nc -l 13013
 
@@ -14,6 +14,12 @@ clean:
 	rm .gitignore
 	git clean -if
 	git checkout .gitignore
+
+ac:
+	./.tools/prepare-msg.pl ac
+
+tada:
+	./.tools/prepare-msg.pl tada
 
 
 ddir := $(filter-out leetcode _archive LICENSE Makefile %.vim,\

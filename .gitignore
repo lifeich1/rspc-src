@@ -3,6 +3,9 @@ Session.vim
 *.swp
 */**
 
+!/.tools/
+!/.tools/*.pl
+
 !*/*.rs
 !*/*.cc
 !*/*.md
