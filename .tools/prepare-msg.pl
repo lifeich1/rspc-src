@@ -41,7 +41,7 @@ foreach (@lines) {
         say "handling $n ...";
 
         if ( $tg eq 'ac' ) {
-            if ( $n =~ m{\A(\d+)/(\w)/main\.(?:cc|rs)\Z} ) {
+            if ( $n =~ m{\A(\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
                 my $i = &gissue($1);
                 &gac( $n, qq{$1 $2 (#$i)} );
             }
