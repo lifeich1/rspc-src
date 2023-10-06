@@ -26,6 +26,21 @@ using namespace std;
 const int N = 501001;
 int mx[N * 4][2], lm[N * 4][2], rm[N * 4][2], fl[N * 4];
 
+void dofl(int n, int l, int r) {
+  fl[n] &= 1;
+  if (fl[n] == 0)
+    return;
+  if (fl[n]) {
+    swap(mx[n][0], mx[n][1]);
+    swap(lm[n][0], lm[n][1]);
+    swap(rm[n][0], rm[n][1]);
+  }
+  fl[n] = 0;
+  if (l < r) {
+    fl[n + n] ^= 1;
+    fl[1 + n + n] ^= 1;
+  }
+}
 void frms(int n, int l, int r, int c) {
   if (l == r)
     return;
@@ -47,23 +62,13 @@ void frms(int n, int l, int r, int c) {
 }
 
 void frms(int n, int l, int r) {
+  if (l != r) {
+    int mid = (l + r) / 2;
+    dofl(n + n, l, mid);
+    dofl(n + n + 1, mid + 1, r);
+  }
   frms(n, l, r, 0);
   frms(n, l, r, 1);
-}
-void dofl(int n, int l, int r) {
-  fl[n] &= 1;
-  if (fl[n] == 0)
-    return;
-  if (fl[n]) {
-    swap(mx[n][0], mx[n][1]);
-    swap(lm[n][0], lm[n][1]);
-    swap(rm[n][0], rm[n][1]);
-  }
-  fl[n] = 0;
-  if (l < r) {
-    fl[n + n] ^= 1;
-    fl[1 + n + n] ^= 1;
-  }
 }
 
 void build(int n, int l, int r, string_view s) {
