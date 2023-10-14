@@ -50,6 +50,9 @@ foreach (@lines) {
             if ( $n =~ m{\A(leetcode/(?:bi)?weekly-contest-\d+\.txt)\Z} ) {
                 &gac( $n, $1 );
             }
+            if ( $n =~ m{\A(\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
+                &gac( $n, "$1 (#)" );
+            }
         }
         else {
             die "unknown arg1: $tg";
