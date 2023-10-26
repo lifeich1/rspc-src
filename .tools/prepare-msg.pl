@@ -51,7 +51,10 @@ foreach (@lines) {
                 &gac( $n, $1 );
             }
             if ( $n =~ m{\A(\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
-                &gac( $n, "$1 (#)" );
+                &gac( $n, "[atcoder] $1 (#)" );
+            }
+            if ( $n =~ m{\A(START\w+)/(\w+)/main\.(?:cc|rs)\Z} ) {
+                &gac( $n, "[codechef] $1 (#)" );
             }
         }
         else {
