@@ -50,7 +50,10 @@ foreach (@lines) {
             if ( $n =~ m{\A(leetcode/(?:bi)?weekly-contest-\d+\.txt)\Z} ) {
                 &gac( $n, $1 );
             }
-            if ( $n =~ m{\A(\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
+            if ( $n =~ m{\A(\d+)/(\w)/main\.(?:cc|rs)\Z} ) {
+                &gac( $n, "$1 (#)" );
+            }
+            if ( $n =~ m{\A(\D\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
                 &gac( $n, "[atcoder] $1 (#)" );
             }
             if ( $n =~ m{\A(START\w+)/(\w+)/main\.(?:cc|rs)\Z} ) {
