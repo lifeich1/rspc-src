@@ -13,6 +13,6 @@ say STDERR "line: $line";
 if ( $line =~ m{:accept: (?:AC )?$tg \w+ \(#(\d+)\)} ) {
     say $1;
 }
-elsif ( $line =~ m{:tada: $tg \(#(\d+)\)} ) {
+elsif ( $line =~ m{:tada: (?:\[\w+\] )$tg \(#(\d+)\)} ) {
     say $1;
 }
