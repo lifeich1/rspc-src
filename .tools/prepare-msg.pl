@@ -30,7 +30,7 @@ sub gissue {
     if ( $line =~ m{:accept: (?:AC )?$n \w+ \(#(\d+)\)} ) {
         return $1;
     }
-    elsif ( $line =~ m{:tada: $n \(#(\d+)\)} ) {
+    elsif ( $line =~ m{:tada: (?:\[\w+\] )$n \(#(\d+)\)} ) {
         return $1;
     }
 }
