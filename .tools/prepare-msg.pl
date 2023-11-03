@@ -3,6 +3,7 @@ use strict;
 use v5.24;
 use utf8;
 use open qw/:std :utf8/;
+use Time::HiRes qw(gettimeofday);
 
 my @lines = split /\n/, `git status -s`;
 say scalar @lines;
@@ -26,11 +27,25 @@ sub gac {
 sub gissue {
   my ($n) = @_;
   chomp( my $line = qx(git log --oneline -20| grep "$n" | head -n 1) );
+  if ( length($line) eq 0 ) {
+    my ( $s, $us ) = gettimeofday;
+    say "fallback to slow search ...";
+    chomp( $line = qx(git log --oneline| grep "$n" | head -n 1) );
+    my ( $s1, $us1 ) = gettimeofday;
+    $us = $us1 - $us;
+    $s  = $s1 - $s;
+    if ( $us lt 0 ) {
+      $us += 1_000_000;
+      $s  -= 1;
+    }
+    my $ms = $s * 1000 + $us / 1000;
+    say "cost $ms ms";
+  }
   say "gissue n:$n line: $line";
   if ( $line =~ m{:accept: (?:AC )?$n \w+ \(#(\d+)\)} ) {
     return $1;
   }
-  elsif ( $line =~ m{:tada: (?:\[\w+\] )$n \(#(\d+)\)} ) {
+  elsif ( $line =~ m{:tada: (?:\[\w+\] )?$n \(#(\d+)\)} ) {
     return $1;
   }
 }
