@@ -80,7 +80,7 @@ foreach (@lines) {
       }
       if ( $n =~ m{\A(\D\w+)/(\w)/main\.(?:cc|rs)\Z} ) {
         my $sn = &gh_isu_n($1);
-        &gac( $n, "[atcoder] $1 (#sn)" );
+        &gac( $n, "[atcoder] $1 (#$sn)" );
       }
       if ( $n =~ m{\A(START\w+)/(\w+)/main\.(?:cc|rs)\Z} ) {
         my $sn = &gh_isu_n($1);
