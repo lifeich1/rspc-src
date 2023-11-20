@@ -4,15 +4,19 @@ use strict;
 
 my $tg = shift;
 if ( $tg =~ m{_archive/(\w+)} ) {
-    $tg = $1;
+  $tg = $1;
 }
 say STDERR "tg: $tg";
 
-chomp( my $line = qx(git log --oneline -20| grep "$tg" | head -n 1) );
-say STDERR "line: $line";
-if ( $line =~ m{:accept: (?:AC )?$tg \w+ \(#(\d+)\)} ) {
+my @line = split /\n/, qx(git log --oneline -20| grep "$tg" | head);
+foreach (@line) {
+  say STDERR "line: $_";
+  if (m{:accept: (?:AC )?$tg \w+ \(#(\d+)\)}) {
     say $1;
-}
-elsif ( $line =~ m{:tada: (?:\[\w+\] )$tg \(#(\d+)\)} ) {
+    last;
+  }
+  elsif (m{:tada: (?:\[\w+\] )?$tg \(#(\d+)\)}) {
     say $1;
+    last;
+  }
 }
