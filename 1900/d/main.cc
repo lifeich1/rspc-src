@@ -26,6 +26,26 @@ using namespace std;
 const int N = 100001;
 int lp[N], c[N];
 vector<int> ps;
+vector<int> h[N];
+int64_t f[N];
+
+void getds(vector<int> &ds, int x) {
+  ds.clear();
+  ds.emplace_back(1);
+  while (x > 1) {
+    int t = lp[x];
+    if (0 == t)
+      t = x;
+    int k = 1;
+    x /= t;
+    while (x % t == 0)
+      ++k, x /= t;
+    int m = ds.size();
+    for (int i = 0, u = t; i < k; ++i, u *= t)
+      for (int j = 0; j < m; ++j)
+        ds.emplace_back(ds[j] * u);
+  }
+}
 
 int main() {
 #if defined(RSPC_TRACE_BTIME)
@@ -55,50 +75,30 @@ int main() {
     a.reserve(n);
     copy_n(std::istream_iterator<int>(std::cin), n, std::back_inserter(a));
     sort(a.begin(), a.end());
-    fill(c, c + a.back() + 1, 0);
-    map<int,int> cnt;
-    for (int x : a) cnt[x]++;
-    int64_t ans = 0;
-    int res = n;
-    for (auto [x, ct] : cnt) {
-      int64_t wt = 0;
-      for (int i = 0; i < ct; ++i)
-        wt += --res;
-      if (ct > 1) {
-        ans += int64_t(x) * ct * (ct - 1) / 2 * res;
+    vector<int> ds;
+    for (int i = 1; i <= a.back(); ++i)
+      h[i].clear();
+    for (int i = 0; i < n; ++i) {
+      if (0 == i || a[i] > a[i - 1]) {
+        getds(ds, a[i]);
       }
-      if (ct > 2) {
-        ans += int64_t(x) * int64_t(ct)*(ct-1)/2*(ct-2)/3;
+      for (int d : ds) {
+        h[d].emplace_back(i);
       }
-      map<int, int> pc;
-      for (int t = x; t > 1; t /= lp[t])
-        if (0 == lp[t]) {
-          pc[t]++;
-          break;
-        } else
-          pc[lp[t]]++;
-      set<int> y = {1};
-      for (auto [k, c] : pc) {
-        vector<int> ad;
-        for (int v : y)
-          for (int i = 1, t = v * k; i <= c; ++i, t *= k)
-            ad.emplace_back(t);
-        for (auto t : ad)
-          y.emplace(t);
-      }
-      vector<int> yl(y.begin(), y.end());
-      vector<int> f(yl.size(), 0);
-      for (int i = 0; i < yl.size(); ++i)
-        f[i] = c[yl[i]];
-      for (int i = yl.size() - 1; i >= 0; --i) {
-        for (int j = yl.size() - 1; j > i; --j)
-          if (yl[j] % yl[i] == 0)
-            f[i] -= f[j];
-        ans += int64_t(f[i]) * yl[i] * wt;
-      }
-      for (int t : yl)
-        c[t]+=ct;
     }
+    fill(f, f + a.back() + 1, 0);
+    for (int i = 1; i <= a.back(); ++i) {
+      auto &v = f[i];
+      for (int k = 1; k < h[i].size(); ++k)
+        v += int64_t(n - h[i][k] - 1) * k;
+    }
+    for (int i = a.back(); i > 0; --i) {
+      for (int t = i + i; t <= a.back(); t += i)
+        f[i] -= f[t];
+    }
+    int64_t ans = 0;
+    for (int i = 1; i <= a.back(); ++i)
+      ans += f[i] * i;
     cout << ans << endl;
   }
   return 0;
