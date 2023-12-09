@@ -35,20 +35,26 @@ int main() {
   cin >> tt;
   while (tt--) {
     int n;
-    cin >> n;
     string s;
-    cin >> s;
+    cin >> n >> s;
     map<char, int> c;
-    for (const auto &ch : s)
-      c[ch]++;
-    int ans = n % 2;
-    for (const auto &[_, v] : c) {
-      if (v + v > n) {
-        ans = v - (n - v);
-        break;
-      }
+    for (char t : s)
+      c[t]++;
+    priority_queue<int> q;
+    for (auto [x, v] : c)
+      q.push(v);
+    while (q.size() > 1) {
+      int t1 = q.top();
+      q.pop();
+      int t2 = q.top();
+      q.pop();
+      t1--, t2--;
+      if (t1)
+        q.push(t1);
+      if (t2)
+        q.push(t2);
     }
-    cout << ans << endl;
+    cout << (q.size() ? q.top() : 0) << endl;
   }
   return 0;
 }
