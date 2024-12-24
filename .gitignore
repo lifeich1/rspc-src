@@ -1,4 +1,5 @@
 Session.vim
+/current-context
 
 *.swp
 */**
