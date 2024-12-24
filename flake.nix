@@ -30,6 +30,7 @@
                 cat "$_rt/.tools/template.cc" > main.cc
               fi
               flags+=(main.cc)
+              zellij action rename-tab "$ODIR"
             fi
             echo flags: ''${flags[*]}
             exec nvim -c "luaf $_rt/.tools/nvim.lua" \
