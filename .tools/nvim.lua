@@ -150,17 +150,18 @@ setup_file(makefile, makefile_text);
 setup_file(justfile, justfile_text);
 
 local testcase_hl = function()
-  vim.fn.matchadd('Include', '\\[case\\]');
+  vim.fn.matchadd('Label', '\\[case\\]');
   vim.fn.matchadd('Added', 'AC');
   vim.fn.matchadd('Todo', 'PENDING');
   vim.fn.matchadd('Changed', 'RAN');
   vim.fn.matchadd('Error', 'WA');
-  vim.fn.matchadd('Error', 'RE');
+  vim.fn.matchadd('Removed', 'RE');
 end
 
 
 vim.o.makeprg = string.format("just -f %s -d .", justfile);
 
+vim.keymap.set('n', '<leader>ta', ':Make checkall<cr>');
 vim.keymap.set('n', '<leader>tc', function()
   local src_buf = vim.fn.bufnr();
   if vim.t.case_buf ~= nil then
@@ -187,7 +188,7 @@ vim.keymap.set('n', '<leader>tc', function()
   vim.bo.bufhidden = 'hide';
   vim.bo.swapfile = false;
   vim.bo.readonly = true;
-  vim.bo.makeprg = string.format("just -f %s checkall -d .", justfile);
+  vim.bo.makeprg = string.format("just -f %s -d . checkall", justfile);
   vim.api.nvim_create_autocmd('BufWinLeave', {
     pattern = '<buffer>',
     callback = function()
