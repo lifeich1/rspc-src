@@ -18,6 +18,7 @@
             just
             stdenv.cc.cc
             gnumake
+            gdb
           ];
 
           shellHook = ''

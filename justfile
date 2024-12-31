@@ -25,3 +25,8 @@ h: (dir-ctx "h")
 i: (dir-ctx "i")
 j: (dir-ctx "j")
 k: (dir-ctx "k")
+
+
+
+tada:
+	./.tools/prepare-msg.pl tada
