@@ -30,3 +30,12 @@ k: (dir-ctx "k")
 
 tada:
 	./.tools/prepare-msg.pl tada
+
+ac:
+	./.tools/prepare-msg.pl ac
+
+ar ctx=`cat current-context`:
+  git mv {{ ctx }} _archive/
+  git commit -a -m ":truck: _archive {{ ctx }}, close #`perl ./.tools/archive_contest_issue.pl {{ ctx }}`" -e
+  rm -f current-context
+
