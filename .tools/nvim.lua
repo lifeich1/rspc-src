@@ -1,3 +1,48 @@
+local rev = 5;
+
+local makefile = string.format('/tmp/_rspc.mak.%d', rev);
+local makefile_text = [[
+main.cc.exe: main.cc
+	g++ -o $@ -std=c++20 -Wall -g $<
+]];
+local justfile = string.format('/tmp/_rspc.just.%d', rev);
+local justfile_text = [[
+_makefile := "%s"
+_thisfile := "%s"
+
+build:
+  make -f {{ _makefile }}
+
+checkall: build
+  #!/usr/bin/env bash
+  set -euxo pipefail
+  for i in *.in; do
+    o=${i/%%in/out}
+    timeout 5 ./main.cc.exe < $i > $o
+    ans=${i/%%in/ans}
+    if [ -f "$ans" ]; then
+      just -f {{ _thisfile }} -d . diff "${i/%%.in/}"
+    fi
+  done
+
+diff name:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+  o={{name}}.out
+  ans={{name}}.ans
+  if [ -f ./eigen.pl ]; then
+    o={{name}}.out.eigen
+    ans={{name}}.ans.eigen
+    perl ./eigen.pl < {{name}}.out > $o
+    perl ./eigen.pl < {{name}}.ans > $ans
+  fi
+  diff -q --ignore-trailing-space --ignore-blank-lines "$o" "$ans"
+
+pwd:
+  pwd
+]];
+justfile_text = justfile_text:format(makefile, justfile);
+
 local set_label = function(buf, name, label)
   local tag = name:gsub("(.+)%.in", "^%%[case%%] %1\t");
   for i = 1, 200 do
@@ -6,7 +51,7 @@ local set_label = function(buf, name, label)
       break
     end
     if text:match(tag) ~= nil then
-      local new_text = text:gsub("\t%w+$", "\t" .. label);
+      local new_text = text:gsub("\t[%w_]+$", "\t" .. label);
       vim.fn.setbufvar(buf, "&readonly", 0);
       vim.fn.setbufline(buf, i, new_text);
       vim.fn.setbufvar(buf, "&readonly", 1);
@@ -16,8 +61,9 @@ local set_label = function(buf, name, label)
 end
 
 local task_diff = function(name, out, ans)
+  local base = name:gsub('%.in', '');
   local buf = vim.fn.bufnr();
-  vim.system({ 'diff', '-q', '--ignore-trailing-space', '--ignore-blank-lines', out, ans }, {},
+  vim.system({ 'just', '-f', justfile, '-d', '.', 'diff', base }, {},
     vim.schedule_wrap(function(complete)
       local label = 'WA';
       if complete.code == 0 then
@@ -84,7 +130,7 @@ local task_run = function()
       vim.print('done execute main.cc.exe');
       if complete.code == 0 then
         local ans = case .. '.ans';
-        if vim.fn.filereadable(ans) then
+        if vim.fn.filereadable(ans) ~= 0 then
           task_diff(input, out, ans);
         else
           set_label(buf, input, 'RAN');
@@ -104,34 +150,6 @@ local edit_ext = function(suffix)
   vim.cmd(string.format('edit %s.%s', case, suffix));
 end
 
-local rev = 4;
-
-local makefile = string.format('/tmp/_rspc.mak.%d', rev);
-local makefile_text = [[
-main.cc.exe: main.cc
-	g++ -o $@ -std=c++20 -Wall -g $<
-]];
-local justfile = string.format('/tmp/_rspc.just.%d', rev);
-local justfile_text = [[
-build:
-  make -f %s
-
-checkall: build
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  for i in *.in; do
-    o=${i/%%in/out}
-    timeout 5 ./main.cc.exe < $i > $o
-    ans=${i/%%in/ans}
-    if [ -f "$ans" ]; then
-      diff -q --ignore-trailing-space --ignore-blank-lines "$o" "$ans"
-    fi
-  done
-
-pwd:
-  pwd
-]];
-justfile_text = justfile_text:format(makefile);
 
 local setup_file = function(filename, text)
   if vim.fn.filereadable(filename) == 0 then
